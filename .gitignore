@@ -1,0 +1,15 @@
+.gradle
+/build/
+/gradle/wrapper/
+
+# Ignore Gradle GUI config
+gradle-app.setting
+
+# Cache of project
+.gradletasknamecache
+
+# IntelliJ IDEA
+/.idea/
+
+# Secret files
+secret.json
