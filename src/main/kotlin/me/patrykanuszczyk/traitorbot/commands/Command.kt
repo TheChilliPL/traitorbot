@@ -5,6 +5,4 @@ data class Command (
     val aliases: Set<String>,
     val description: String,
     val executor: CommandExecutor
-) {
-    val allNames get() = setOf(name, *aliases.toTypedArray())
-}
+)

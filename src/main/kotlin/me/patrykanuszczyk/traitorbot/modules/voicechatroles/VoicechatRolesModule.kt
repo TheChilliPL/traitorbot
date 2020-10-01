@@ -1,11 +1,10 @@
-package me.patrykanuszczyk.traitorbot.voicechatroles
+package me.patrykanuszczyk.traitorbot.modules.voicechatroles
 
 import me.patrykanuszczyk.traitorbot.TraitorBot
 import me.patrykanuszczyk.traitorbot.commands.Command
 import me.patrykanuszczyk.traitorbot.commands.CommandExecutionArguments
 import me.patrykanuszczyk.traitorbot.commands.CommandExecutor
 import me.patrykanuszczyk.traitorbot.modules.BotModule
-import me.patrykanuszczyk.traitorbot.prefix.GuildPrefixTable
 import net.dv8tion.jda.api.Permission
 import net.dv8tion.jda.api.events.guild.voice.GuildVoiceJoinEvent
 import net.dv8tion.jda.api.events.guild.voice.GuildVoiceLeaveEvent
@@ -59,8 +58,8 @@ class VoicechatRolesModule(bot: TraitorBot) : BotModule(bot), CommandExecutor {
                 args.channel.sendMessage(
                     roles.joinToString("\n", "Znaleziono następujące role VC:\n") {
                         (args.guild.getVoiceChannelById(it.first)?.name ?: "${it.first} (not found)") +
-                            " → " +
-                            (args.guild.getRoleById(it.second)?.name ?: "${it.second} (not found)")
+                                " → " +
+                                (args.guild.getRoleById(it.second)?.name ?: "${it.second} (not found)")
                     }
                 ).submit()
             }
@@ -73,7 +72,7 @@ class VoicechatRolesModule(bot: TraitorBot) : BotModule(bot), CommandExecutor {
                 if(cmdArgs.size < 3) {
                     args.channel.sendMessage(
                         "${args.user.asMention}, składnia to:\n" +
-                            "```\nvcrole set id-kanału-głosowego id-roli\n```"
+                                "```\nvcrole set id-kanału-głosowego id-roli\n```"
                     ).submit()
                     return
                 }
@@ -124,18 +123,15 @@ class VoicechatRolesModule(bot: TraitorBot) : BotModule(bot), CommandExecutor {
 
     class Listener(val module: VoicechatRolesModule) : ListenerAdapter() {
         override fun onGuildVoiceJoin(event: GuildVoiceJoinEvent) {
-            println("${event.entity.effectiveName} wszedł na ${event.channelJoined}")
             module.processJoin(event)
         }
 
         override fun onGuildVoiceMove(event: GuildVoiceMoveEvent) {
-            println("${event.entity.effectiveName} przeszedł z kanału ${event.channelLeft} na kanał ${event.channelJoined}")
             module.processLeave(event)
             module.processJoin(event)
         }
 
         override fun onGuildVoiceLeave(event: GuildVoiceLeaveEvent) {
-            println("${event.entity.effectiveName} wyszedł z ${event.channelLeft}")
             module.processLeave(event)
         }
     }

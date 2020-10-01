@@ -1,4 +1,4 @@
-package me.patrykanuszczyk.traitorbot.admin
+package me.patrykanuszczyk.traitorbot.modules.admin
 
 import me.patrykanuszczyk.traitorbot.TraitorBot
 import me.patrykanuszczyk.traitorbot.commands.Command

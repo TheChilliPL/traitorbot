@@ -1,4 +1,4 @@
-package me.patrykanuszczyk.traitorbot.prefix
+package me.patrykanuszczyk.traitorbot.modules.prefix
 
 import me.patrykanuszczyk.traitorbot.TraitorBot
 import me.patrykanuszczyk.traitorbot.commands.Command
@@ -31,44 +31,45 @@ class GuildPrefixModule(bot: TraitorBot) : BotModule(bot), CommandExecutor {
             "set" -> {
                 if(args.member?.hasPermission(Permission.MANAGE_SERVER) == false) {
                     bot.commandManager.sendNoPermissionMessage(args)
-                    return
-                }
-                if(cmdArgs.size <= 1 || cmdArgs[1].isEmpty()) {
+                } else if(cmdArgs.size <= 1 || cmdArgs[1].isEmpty()) {
                     args.channel.sendMessage("${args.user.asMention}, prefix nie może być pusty.").submit()
-                    return
-                }
-                transaction {
-                    GuildPrefixTable.insertOrUpdate(
-                        GuildPrefixTable.prefix
-                    ) {
-                        it[id] = args.guild.idLong
-                        it[prefix] = cmdArgs[1]
+                } else {
+                    transaction {
+                        GuildPrefixTable.insertOrUpdate(
+                            GuildPrefixTable.prefix
+                        ) {
+                            it[id] = args.guild.idLong
+                            it[prefix] = cmdArgs[1]
+                        }
                     }
+                    args.channel.sendMessage("${args.user.asMention}, prefix serwera zmieniono!")
+                        .submit()
                 }
-                args.channel.sendMessage("${args.user.asMention}, prefix serwera zmieniono!")
-                    .submit()
             }
             in setOf("remove", "delete", "del") -> {
                 if(args.member?.hasPermission(Permission.MANAGE_SERVER) == false) {
                     bot.commandManager.sendNoPermissionMessage(args)
-                    return
-                }
-                transaction {
-                    GuildPrefixTable.deleteIgnoreWhere {
-                        GuildPrefixTable.id eq args.guild.idLong
+                } else {
+                    transaction {
+                        GuildPrefixTable.deleteIgnoreWhere {
+                            GuildPrefixTable.id eq args.guild.idLong
+                        }
                     }
+                    args.channel.sendMessage("${args.user.asMention}, prefix został usunięty!")
+                        .submit()
                 }
-                args.channel.sendMessage("${args.user.asMention}, prefix został usunięty!")
-                    .submit()
             }
             else -> when(val prefix = bot.getPrefixFor(args.guild)) {
-                null ->  args.channel.sendMessage(
-                    "${args.user.asMention}, obecnie nie ma ustawionego prefixu " +
-                        "na tym serwerze."
-                ).submit()
-                else -> args.channel.sendMessage(
-                    "${args.user.asMention}, obecny prefix na tym serwerze to `${prefix}`."
-                ).submit()
+                null -> {
+                    args.channel.sendMessage(
+                        "${args.user.asMention}, obecnie nie ma ustawionego prefixu na tym serwerze."
+                    ).submit()
+                }
+                else -> {
+                    args.channel.sendMessage(
+                        "${args.user.asMention}, obecny prefix na tym serwerze to `${prefix}`."
+                    ).submit()
+                }
             }
         }
     }

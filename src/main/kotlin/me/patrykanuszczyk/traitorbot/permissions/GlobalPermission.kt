@@ -1,7 +1,5 @@
 package me.patrykanuszczyk.traitorbot.permissions
 
-import me.patrykanuszczyk.traitorbot.voicechatroles.VoicechatRole
-import me.patrykanuszczyk.traitorbot.voicechatroles.VoicechatRolesTable
 import org.jetbrains.exposed.dao.IntEntity
 import org.jetbrains.exposed.dao.IntEntityClass
 import org.jetbrains.exposed.dao.id.EntityID

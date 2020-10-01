@@ -1,15 +1,16 @@
 package me.patrykanuszczyk.traitorbot
 
-import me.patrykanuszczyk.traitorbot.admin.AdminModule
+import com.google.gson.FieldNamingPolicy
+import com.google.gson.GsonBuilder
+import com.google.gson.stream.JsonReader
+import me.patrykanuszczyk.traitorbot.modules.admin.AdminModule
 import me.patrykanuszczyk.traitorbot.commands.CommandManager
 import me.patrykanuszczyk.traitorbot.modules.BotModule
 import me.patrykanuszczyk.traitorbot.permissions.GlobalPermission
 import me.patrykanuszczyk.traitorbot.permissions.GlobalPermissionsTable
-import me.patrykanuszczyk.traitorbot.prefix.GuildPrefix
-import me.patrykanuszczyk.traitorbot.prefix.GuildPrefixModule
-import me.patrykanuszczyk.traitorbot.voicechatroles.VoicechatRole
-import me.patrykanuszczyk.traitorbot.voicechatroles.VoicechatRolesEventListener
-import me.patrykanuszczyk.traitorbot.voicechatroles.VoicechatRolesModule
+import me.patrykanuszczyk.traitorbot.modules.prefix.GuildPrefix
+import me.patrykanuszczyk.traitorbot.modules.prefix.GuildPrefixModule
+import me.patrykanuszczyk.traitorbot.modules.voicechatroles.VoicechatRolesModule
 import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.JDABuilder
 import net.dv8tion.jda.api.entities.Guild
@@ -17,6 +18,7 @@ import net.dv8tion.jda.api.entities.Message
 import net.dv8tion.jda.api.entities.User
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.transactions.transaction
+import java.io.FileReader
 
 class TraitorBot(secretConfig: SecretConfig) {
     val database: Database = Database.connect(
@@ -28,16 +30,12 @@ class TraitorBot(secretConfig: SecretConfig) {
 
     val discord: JDA
     val commandManager = CommandManager(this)
-    private var _modules = mutableSetOf<BotModule>()
     val modules get() = _modules as Set<BotModule>
 
+    private var _modules = mutableSetOf<BotModule>()
+
     init {
-        val jdaBuilder = JDABuilder.createDefault(secretConfig.botToken)
-        jdaBuilder.addEventListeners(
-            commandManager,
-            VoicechatRolesEventListener(this)
-        )
-        discord = jdaBuilder.build()
+        discord = JDABuilder.createDefault(secretConfig.botToken).addEventListeners(commandManager).build()
         _modules.add(AdminModule(this))
         _modules.add(VoicechatRolesModule(this))
         _modules.add(GuildPrefixModule(this))
@@ -45,7 +43,7 @@ class TraitorBot(secretConfig: SecretConfig) {
 
     fun hasGlobalPermission(user: User, permission: String): Boolean {
         return getGlobalPermissions(user.idLong).any { userPerm ->
-            if (userPerm.endsWith('*'))
+            if(userPerm.endsWith('*'))
                 permission.startsWith(userPerm.removeSuffix("*"), true)
             else
                 permission.equals(userPerm, true)
@@ -61,18 +59,20 @@ class TraitorBot(secretConfig: SecretConfig) {
     fun parseCommand(message: Message): Pair<String, String>? {
         val content = message.contentRaw
 
-        val mentionA = "<@${discord.selfUser.id}>"
-        val mentionB = "<@!${discord.selfUser.id}>"
-        val prefix = getPrefixFor(message.guild)
+        val prefixes = listOf(
+            "<@${discord.selfUser.id}>",
+            "<@!${discord.selfUser.id}>",
+            getPrefixFor(message.guild)
+        )
 
         var fullCommand: String? = null
 
-        if(content.startsWith(mentionA))
-            fullCommand = content.substring(mentionA.length)
-        else if(content.startsWith(mentionB))
-            fullCommand = content.substring(mentionB.length)
-        else if(prefix != null && content.startsWith(prefix))
-            fullCommand = content.substring(prefix.length)
+        for(prefix in prefixes) {
+            if (prefix != null && content.startsWith(prefix)) {
+                fullCommand = content.substring(prefix.length)
+                break
+            }
+        }
 
         if(fullCommand == null) return null
 
@@ -89,4 +89,17 @@ class TraitorBot(secretConfig: SecretConfig) {
             GuildPrefix.findById(guild.idLong)
         }?.prefix
     }
+}
+
+fun main() {
+    val gson = GsonBuilder()
+        .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_DASHES)
+        .create()
+
+    val reader = JsonReader(FileReader("secret.json"))
+    val secretConfig = gson.fromJson<SecretConfig>(reader, SecretConfig::class.java)
+
+    TraitorBot(
+        secretConfig
+    )
 }
