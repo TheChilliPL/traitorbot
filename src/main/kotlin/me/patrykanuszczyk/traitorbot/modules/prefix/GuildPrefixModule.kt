@@ -23,15 +23,15 @@ class GuildPrefixModule(bot: TraitorBot) : BotModule(bot), CommandExecutor {
     }
 
     override fun executeCommand(args: CommandExecutionArguments) {
-        if(args.command != prefixCommand) return
+        if (args.command != prefixCommand) return
 
         val cmdArgs = args.arguments.split(" ", limit = 2)
 
-        when(cmdArgs.firstOrNull()) {
+        when (cmdArgs.firstOrNull()) {
             "set" -> {
-                if(args.member?.hasPermission(Permission.MANAGE_SERVER) == false) {
+                if (args.member?.hasPermission(Permission.MANAGE_SERVER) == false) {
                     bot.commandManager.sendNoPermissionMessage(args)
-                } else if(cmdArgs.size <= 1 || cmdArgs[1].isEmpty()) {
+                } else if (cmdArgs.size <= 1 || cmdArgs[1].isEmpty()) {
                     args.channel.sendMessage("${args.user.asMention}, prefix nie może być pusty.").submit()
                 } else {
                     transaction {
@@ -47,7 +47,7 @@ class GuildPrefixModule(bot: TraitorBot) : BotModule(bot), CommandExecutor {
                 }
             }
             in setOf("remove", "delete", "del") -> {
-                if(args.member?.hasPermission(Permission.MANAGE_SERVER) == false) {
+                if (args.member?.hasPermission(Permission.MANAGE_SERVER) == false) {
                     bot.commandManager.sendNoPermissionMessage(args)
                 } else {
                     transaction {
@@ -59,7 +59,7 @@ class GuildPrefixModule(bot: TraitorBot) : BotModule(bot), CommandExecutor {
                         .submit()
                 }
             }
-            else -> when(val prefix = bot.getPrefixFor(args.guild)) {
+            else -> when (val prefix = bot.getPrefixFor(args.guild)) {
                 null -> {
                     args.channel.sendMessage(
                         "${args.user.asMention}, obecnie nie ma ustawionego prefixu na tym serwerze."

@@ -20,9 +20,9 @@ class AdminModule(bot: TraitorBot) : BotModule(bot), CommandExecutor {
     }
 
     override fun executeCommand(args: CommandExecutionArguments) {
-        when(args.command) {
+        when (args.command) {
             stopCommand -> {
-                if(!bot.hasGlobalPermission(args.user, "admin.bot_stop")) {
+                if (!bot.hasGlobalPermission(args.user, "admin.bot_stop")) {
                     bot.commandManager.sendNoPermissionMessage(args)
                     return
                 }

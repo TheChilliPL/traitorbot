@@ -30,15 +30,15 @@ class VoicechatRolesModule(bot: TraitorBot) : BotModule(bot), CommandExecutor {
     }
 
     override fun executeCommand(args: CommandExecutionArguments) {
-        if(args.command != voicechatRoleCommand) return
+        if (args.command != voicechatRoleCommand) return
 
-        if(!args.message.isFromGuild) {
+        if (!args.message.isFromGuild) {
             args.channel.sendMessage("Tej komendy można używać tylko na serwerze.")
             return
         }
 
         val cmdArgs = args.arguments.split(" ")
-        when(cmdArgs.firstOrNull()) {
+        when (cmdArgs.firstOrNull()) {
             "list" -> {
                 val roles = transaction {
                     VoicechatRolesTable.select {
@@ -48,7 +48,7 @@ class VoicechatRolesModule(bot: TraitorBot) : BotModule(bot), CommandExecutor {
                     }
                 }
 
-                if(roles.isEmpty()) {
+                if (roles.isEmpty()) {
                     args.channel.sendMessage(
                         "${args.user.asMention}, nie znaleziono żadnych roli VC!"
                     ).submit()
@@ -58,21 +58,21 @@ class VoicechatRolesModule(bot: TraitorBot) : BotModule(bot), CommandExecutor {
                 args.channel.sendMessage(
                     roles.joinToString("\n", "Znaleziono następujące role VC:\n") {
                         (args.guild.getVoiceChannelById(it.first)?.name ?: "${it.first} (not found)") +
-                                " → " +
-                                (args.guild.getRoleById(it.second)?.name ?: "${it.second} (not found)")
+                            " → " +
+                            (args.guild.getRoleById(it.second)?.name ?: "${it.second} (not found)")
                     }
                 ).submit()
             }
             in setOf("add", "set") -> {
-                if(!args.member!!.hasPermission(Permission.MANAGE_SERVER)) {
+                if (!args.member!!.hasPermission(Permission.MANAGE_SERVER)) {
                     bot.commandManager.sendNoPermissionMessage(args)
                     return
                 }
 
-                if(cmdArgs.size < 3) {
+                if (cmdArgs.size < 3) {
                     args.channel.sendMessage(
                         "${args.user.asMention}, składnia to:\n" +
-                                "```\nvcrole set id-kanału-głosowego id-roli\n```"
+                            "```\nvcrole set id-kanału-głosowego id-roli\n```"
                     ).submit()
                     return
                 }
@@ -103,7 +103,7 @@ class VoicechatRolesModule(bot: TraitorBot) : BotModule(bot), CommandExecutor {
             }.map { it[VoicechatRolesTable.role] }
         }
 
-        for(role in rolesToRemove.map { channel.guild.getRoleById(it) }.filterNotNull())
+        for (role in rolesToRemove.map { channel.guild.getRoleById(it) }.filterNotNull())
             channel.guild.removeRoleFromMember(event.entity, role).submit()
     }
 
@@ -117,7 +117,7 @@ class VoicechatRolesModule(bot: TraitorBot) : BotModule(bot), CommandExecutor {
             }.map { it[VoicechatRolesTable.role] }
         }
 
-        for(role in rolesToAdd.map { channel.guild.getRoleById(it) }.filterNotNull())
+        for (role in rolesToAdd.map { channel.guild.getRoleById(it) }.filterNotNull())
             channel.guild.addRoleToMember(event.entity, role).submit()
     }
 

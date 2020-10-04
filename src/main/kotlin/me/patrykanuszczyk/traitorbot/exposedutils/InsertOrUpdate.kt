@@ -7,19 +7,25 @@ import org.jetbrains.exposed.sql.statements.InsertStatement
 import org.jetbrains.exposed.sql.transactions.TransactionManager
 
 fun <T : Table> T.insertOrUpdate(vararg onDuplicateUpdateKeys: Column<*>, body: T.(InsertStatement<Number>) -> Unit) =
-    InsertOrUpdate<Number>(onDuplicateUpdateKeys,this).apply {
+    InsertOrUpdate<Number>(onDuplicateUpdateKeys, this).apply {
         body(this)
         execute(TransactionManager.current())
     }
 
 class InsertOrUpdate<Key : Any>(
-    private val onDuplicateUpdateKeys: Array< out Column<*>>,
+    private val onDuplicateUpdateKeys: Array<out Column<*>>,
     table: Table,
     isIgnore: Boolean = false
 ) : InsertStatement<Key>(table, isIgnore) {
     override fun prepareSQL(transaction: Transaction): String {
-        val onUpdateSQL = if(onDuplicateUpdateKeys.isNotEmpty()) {
-            " ON DUPLICATE KEY UPDATE " + onDuplicateUpdateKeys.joinToString { "${transaction.identity(it)}=VALUES(${transaction.identity(it)})" }
+        val onUpdateSQL = if (onDuplicateUpdateKeys.isNotEmpty()) {
+            " ON DUPLICATE KEY UPDATE " + onDuplicateUpdateKeys.joinToString {
+                "${transaction.identity(it)}=VALUES(${
+                    transaction.identity(
+                        it
+                    )
+                })"
+            }
         } else ""
         return super.prepareSQL(transaction) + onUpdateSQL
     }

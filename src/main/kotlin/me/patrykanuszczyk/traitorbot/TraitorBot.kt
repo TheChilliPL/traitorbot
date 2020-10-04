@@ -3,14 +3,14 @@ package me.patrykanuszczyk.traitorbot
 import com.google.gson.FieldNamingPolicy
 import com.google.gson.GsonBuilder
 import com.google.gson.stream.JsonReader
-import me.patrykanuszczyk.traitorbot.modules.admin.AdminModule
 import me.patrykanuszczyk.traitorbot.commands.CommandManager
 import me.patrykanuszczyk.traitorbot.modules.BotModule
-import me.patrykanuszczyk.traitorbot.permissions.GlobalPermission
-import me.patrykanuszczyk.traitorbot.permissions.GlobalPermissionsTable
+import me.patrykanuszczyk.traitorbot.modules.admin.AdminModule
 import me.patrykanuszczyk.traitorbot.modules.prefix.GuildPrefix
 import me.patrykanuszczyk.traitorbot.modules.prefix.GuildPrefixModule
 import me.patrykanuszczyk.traitorbot.modules.voicechatroles.VoicechatRolesModule
+import me.patrykanuszczyk.traitorbot.permissions.GlobalPermission
+import me.patrykanuszczyk.traitorbot.permissions.GlobalPermissionsTable
 import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.JDABuilder
 import net.dv8tion.jda.api.entities.Guild
@@ -43,7 +43,7 @@ class TraitorBot(secretConfig: SecretConfig) {
 
     fun hasGlobalPermission(user: User, permission: String): Boolean {
         return getGlobalPermissions(user.idLong).any { userPerm ->
-            if(userPerm.endsWith('*'))
+            if (userPerm.endsWith('*'))
                 permission.startsWith(userPerm.removeSuffix("*"), true)
             else
                 permission.equals(userPerm, true)
@@ -56,35 +56,20 @@ class TraitorBot(secretConfig: SecretConfig) {
         }
     }
 
+    @Deprecated(
+        "Moved to CommandManager and renamed to parseCommandMessage.",
+        ReplaceWith("this.commandManager.parseCommandMessage(message)"), DeprecationLevel.ERROR
+    )
     fun parseCommand(message: Message): Pair<String, String>? {
-        val content = message.contentRaw
-
-        val prefixes = listOf(
-            "<@${discord.selfUser.id}>",
-            "<@!${discord.selfUser.id}>",
-            getPrefixFor(message.guild)
-        )
-
-        var fullCommand: String? = null
-
-        for(prefix in prefixes) {
-            if (prefix != null && content.startsWith(prefix)) {
-                fullCommand = content.substring(prefix.length)
-                break
-            }
-        }
-
-        if(fullCommand == null) return null
-
-        val split = fullCommand.trim().split(' ', limit = 2)
-
-        return split[0] to if(split.size > 1) split[1].trimStart() else ""
+        return commandManager.parseCommandMessage(message)
     }
 
     /**
      * Gets guild prefix or null, if none is set.
+     * If passed guild is null, returns null.
      */
-    fun getPrefixFor(guild: Guild): String? {
+    fun getPrefixFor(guild: Guild?): String? {
+        if (guild == null) return null
         return transaction {
             GuildPrefix.findById(guild.idLong)
         }?.prefix
