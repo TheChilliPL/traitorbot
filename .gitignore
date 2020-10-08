@@ -13,3 +13,6 @@ gradle-app.setting
 
 # Secret files
 secret.json
+
+# Log files
+**.log

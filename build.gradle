@@ -21,9 +21,17 @@ dependencies {
     compile "org.jetbrains.exposed:exposed-jdbc:0.27.1"
     compile "mysql:mysql-connector-java:5.1.48"
     compile "org.slf4j:slf4j-log4j12:1.7.12"
-    compile "net.dv8tion:JDA:4.2.0_168"
+    compile "net.dv8tion:JDA:4.2.0_208" //168"
 }
 
 compileKotlin {
     kotlinOptions.jvmTarget = "1.8"
 }
+
+task copyLog4jConfig (type: Copy) {
+    from '.'
+    into "$buildDir/classes/kotlin/main"
+    include 'log4j.properties'
+}
+
+processResources.dependsOn(copyLog4jConfig)

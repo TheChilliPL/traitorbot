@@ -7,12 +7,16 @@ import net.dv8tion.jda.api.MessageBuilder
 import net.dv8tion.jda.api.entities.Message
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent
 import net.dv8tion.jda.api.hooks.ListenerAdapter
+import org.apache.log4j.Logger
 import java.awt.Color
 import java.io.CharArrayWriter
 import java.io.PrintWriter
+import java.lang.Exception
 import java.util.concurrent.CompletableFuture
 
 class CommandManager(val bot: TraitorBot) : ListenerAdapter() {
+    val logger = Logger.getLogger(CommandManager::class.java)
+
     val commands get() = _commands as Set<Command>
 
     private var _commands = mutableSetOf<Command>()
@@ -63,28 +67,47 @@ class CommandManager(val bot: TraitorBot) : ListenerAdapter() {
 
             executeCommand(event.message, name, args)
         } catch (exception: Exception) {
-            exception.printStackTrace()
-
-            val stacktrace = CharArrayWriter()
-            PrintWriter(stacktrace).use {
-                exception.printStackTrace(it)
-            }
-            event.channel.sendMessage(
-                MessageBuilder()
-                    .setContent(event.author.asMention)
-                    .setEmbed(
-                        EmbedBuilder()
-                            .setTitle("Wystąpił wyjątek")
-                            .setDescription("```\n$stacktrace\n```")
-                            .setColor(Color.RED)
-                            .build()
-                    ).build()
-            ).submit()
+            handleThrowable(event, exception)
         }
+    }
+
+    fun handleThrowable(event: MessageReceivedEvent, throwable: Throwable) {
+        logger.error("Exception was thrown.", throwable)
+
+        val stacktrace = CharArrayWriter()
+        PrintWriter(stacktrace).use {
+            throwable.printStackTrace(it)
+        }
+        val stackTraceLines = stacktrace.toString().lineSequence()
+        val stackTraceCropped = StringBuilder(stacktrace.size().coerceAtMost(2000))
+        stackTraceCropped.append("```\n")
+        var lengthRemaining = 2000 - 9
+        for(line in stackTraceLines) {
+            lengthRemaining -= line.length + 1
+            if(lengthRemaining < 0) {
+                stackTraceCropped.append("…")
+                break
+            }
+            stackTraceCropped.append(line + "\n")
+        }
+        stackTraceCropped.append("\n```")
+        event.channel.sendMessage(
+            MessageBuilder()
+                .setContent(event.author.asMention)
+                .setEmbed(
+                    EmbedBuilder()
+                        .setTitle("Wystąpił wyjątek")
+                        .setDescription(stackTraceCropped)
+                        .setColor(Color.RED)
+                        .build()
+                ).build()
+        ).queue()
     }
 
     fun executeCommand(message: Message, name: String, args: String) {
         val commands = getCommandsWithName(name)
+
+        logger.info("Executing command: $name $args")
 
         when(commands.size) {
             0 -> message.channel.sendMessage("${message.author.asMention}, nie znalazłem takiej komendy!").submit()
@@ -118,7 +141,7 @@ class CommandManager(val bot: TraitorBot) : ListenerAdapter() {
 
         for(prefix in prefixes) {
             if(prefix == null) continue
-            if(content.startsWith(prefix)) return content.substring(prefix.length)
+            if(content.startsWith(prefix)) return content.substring(prefix.length).trim()
         }
 
         return null
