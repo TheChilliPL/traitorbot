@@ -7,7 +7,8 @@ import net.dv8tion.jda.api.MessageBuilder
 import net.dv8tion.jda.api.entities.Message
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent
 import net.dv8tion.jda.api.hooks.ListenerAdapter
-import org.apache.log4j.Logger
+import org.apache.logging.log4j.LogManager
+import org.apache.logging.log4j.Logger
 import java.awt.Color
 import java.io.CharArrayWriter
 import java.io.PrintWriter
@@ -15,7 +16,7 @@ import java.lang.Exception
 import java.util.concurrent.CompletableFuture
 
 class CommandManager(val bot: TraitorBot) : ListenerAdapter() {
-    val logger = Logger.getLogger(CommandManager::class.java)
+    val logger: Logger = LogManager.getLogger(CommandManager::class.java)
 
     val commands get() = _commands as Set<Command>
 
