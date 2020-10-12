@@ -19,10 +19,17 @@ class AdminModule(bot: TraitorBot) : BotModule(bot), CommandExecutor {
         "Tests bash-like parameters",
         this
     )
+    val throwCommand = Command(
+        "throw",
+        emptySet(),
+        "Throws an exception",
+        this
+    )
 
     init {
         bot.commandManager.registerCommand(stopCommand)
         bot.commandManager.registerCommand(parameterTestCommand)
+        bot.commandManager.registerCommand(throwCommand)
     }
 
     override fun executeCommand(args: CommandExecutionArguments) {
@@ -69,6 +76,13 @@ class AdminModule(bot: TraitorBot) : BotModule(bot), CommandExecutor {
                     more: ${(left as Result.Success).value}
                     """.trimIndent()
                 ).queue()
+            }
+            throwCommand -> {
+                if (!bot.hasGlobalPermission(args.user, "admin.throw")) {
+                    bot.commandManager.sendNoPermissionMessage(args)
+                    return
+                }
+                throw Exception("Exception was thrown by the administrator.")
             }
         }
     }
