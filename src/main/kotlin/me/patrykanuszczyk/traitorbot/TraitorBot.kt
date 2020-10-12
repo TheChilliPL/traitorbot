@@ -36,6 +36,7 @@ class TraitorBot(secretConfig: SecretConfig) {
     private var _modules = mutableSetOf<BotModule>()
 
     init {
+        instance = this
         discord = JDABuilder.createDefault(secretConfig.botToken).addEventListeners(commandManager).build()
         _modules.add(AdminModule(this))
         _modules.add(VoicechatRolesModule(this))
@@ -75,6 +76,10 @@ class TraitorBot(secretConfig: SecretConfig) {
         return transaction {
             GuildPrefix.findById(guild.idLong)
         }?.prefix
+    }
+
+    companion object {
+        internal var instance: TraitorBot? = null
     }
 }
 
