@@ -9,8 +9,6 @@ import me.patrykanuszczyk.traitorbot.modules.BotModule
 import me.patrykanuszczyk.traitorbot.modules.admin.AdminModule
 import me.patrykanuszczyk.traitorbot.modules.prefix.GuildPrefix
 import me.patrykanuszczyk.traitorbot.modules.prefix.GuildPrefixModule
-import me.patrykanuszczyk.traitorbot.modules.voicechatroles.VoicechatRolesModule
-import me.patrykanuszczyk.traitorbot.modules.voting.VotingModule
 import me.patrykanuszczyk.traitorbot.permissions.GlobalPermission
 import me.patrykanuszczyk.traitorbot.permissions.GlobalPermissionsTable
 import me.patrykanuszczyk.traitorbot.utils.Result
@@ -47,9 +45,7 @@ class TraitorBot(secretConfig: SecretConfig) {
         instance = this
         discord = JDABuilder.createDefault(secretConfig.botToken).addEventListeners(commandManager).build()
         _modules.add(AdminModule(this))
-        _modules.add(VoicechatRolesModule(this))
         _modules.add(GuildPrefixModule(this))
-        _modules.add(VotingModule(this))
     }
 
     fun hasGlobalPermission(user: User, permission: String): Boolean {

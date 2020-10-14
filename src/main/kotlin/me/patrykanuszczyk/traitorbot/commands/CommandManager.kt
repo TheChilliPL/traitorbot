@@ -1,6 +1,8 @@
 package me.patrykanuszczyk.traitorbot.commands
 
 import me.patrykanuszczyk.traitorbot.TraitorBot
+import me.patrykanuszczyk.traitorbot.commands.arguments.CommandInvokeArguments
+import me.patrykanuszczyk.traitorbot.commands.arguments.MessageCommandInvokeArguments
 import me.patrykanuszczyk.traitorbot.utils.guildOrNull
 import net.dv8tion.jda.api.EmbedBuilder
 import net.dv8tion.jda.api.MessageBuilder
@@ -12,52 +14,23 @@ import org.apache.logging.log4j.Logger
 import java.awt.Color
 import java.io.CharArrayWriter
 import java.io.PrintWriter
-import java.lang.Exception
-import java.util.concurrent.CompletableFuture
 
 class CommandManager(val bot: TraitorBot) : ListenerAdapter() {
     val logger: Logger = LogManager.getLogger(CommandManager::class.java)
 
     val commands get() = _commands as Set<Command>
-
     private var _commands = mutableSetOf<Command>()
-    private var _aliasIndex = mutableMapOf<String, AliasIndexEntry>()
 
     fun registerCommand(command: Command) {
-        // Registering name
-        val currentCacheForName = _aliasIndex[command.name.toLowerCase()]
-        if (currentCacheForName != null) {
-            if (currentCacheForName.isMainName)
-                throw UnsupportedOperationException("Command of that name already exists")
-            else {
-                currentCacheForName.commands = mutableSetOf(command)
-                currentCacheForName.isMainName = true
-            }
-        } else {
-            _aliasIndex[command.name.toLowerCase()] = AliasIndexEntry(mutableSetOf(command), true)
-        }
-
         _commands.add(command)
-
-        // Registering aliases
-        for (alias in command.aliases) {
-            val currentCacheForAlias = _aliasIndex[alias.toLowerCase()]
-            if (currentCacheForAlias != null) {
-                if (!currentCacheForAlias.isMainName) {
-                    currentCacheForAlias.commands.add(command)
-                }
-            } else {
-                _aliasIndex[alias.toLowerCase()] = AliasIndexEntry(mutableSetOf(command), false)
-            }
-        }
     }
 
-    fun getCommandsWithName(name: String): Set<Command> = _aliasIndex[name]?.commands ?: emptySet()
+    fun getCommandsWithName(name: String): Set<Command> = commands.filter { it.hasName(name) }.toSet()
 
-    fun sendNoPermissionMessage(arguments: CommandExecutionArguments): CompletableFuture<Message> {
-        return arguments.message.channel.sendMessage(
-            ":knife: ${arguments.message.author.asMention}, nie masz na to permisji!"
-        ).submit()
+    fun sendNoPermissionMessage(arguments: CommandInvokeArguments) {
+        arguments.reply(
+            ":knife: Nie masz na to permisji!"
+        )
     }
 
     override fun onMessageReceived(event: MessageReceivedEvent) {
@@ -114,14 +87,9 @@ class CommandManager(val bot: TraitorBot) : ListenerAdapter() {
             0 -> message.channel.sendMessage("${message.author.asMention}, nie znalazłem takiej komendy!").submit()
             1 -> {
                 val command = commands.first()
-                command.executor.executeCommand(
-                    CommandExecutionArguments(
-                        message,
-                        command,
-                        name,
-                        args
-                    )
-                )
+                command.execute(MessageCommandInvokeArguments(
+                    command, message, args
+                ))
             }
             2 -> message.channel.sendMessage(
                 "Jest więcej niż jedna komenda o podanym aliasie, ${message.author.asMention}.\n" +
