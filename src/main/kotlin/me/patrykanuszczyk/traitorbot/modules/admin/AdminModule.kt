@@ -5,6 +5,7 @@ import me.patrykanuszczyk.traitorbot.commands.*
 import me.patrykanuszczyk.traitorbot.modules.BotModule
 import me.patrykanuszczyk.traitorbot.utils.Result
 import net.dv8tion.jda.api.OnlineStatus
+import kotlin.system.exitProcess
 
 class AdminModule(bot: TraitorBot) : BotModule(bot), CommandExecutor {
     val stopCommand = Command(
@@ -40,10 +41,8 @@ class AdminModule(bot: TraitorBot) : BotModule(bot), CommandExecutor {
                     return
                 }
 
-                args.channel.sendMessage(":ok_hand: Już się robi, ${args.user.asMention}!").submit()
-                bot.discord.presence.setStatus(OnlineStatus.OFFLINE)
-                bot.discord.shutdown()
-                return
+                args.channel.sendMessage(":ok_hand: Już się robi, ${args.user.asMention}!").complete()
+                exitProcess(0)
             }
             parameterTestCommand -> {
                 var a = 0
