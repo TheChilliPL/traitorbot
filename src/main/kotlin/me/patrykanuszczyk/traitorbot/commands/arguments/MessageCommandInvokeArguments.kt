@@ -1,11 +1,12 @@
 package me.patrykanuszczyk.traitorbot.commands.arguments
 
+import me.patrykanuszczyk.traitorbot.TraitorBot
 import me.patrykanuszczyk.traitorbot.commands.Command
 import me.patrykanuszczyk.traitorbot.utils.guildOrNull
 import net.dv8tion.jda.api.entities.Message
 
-class MessageCommandInvokeArguments(command: Command, val message: Message, parameters: String)
-    : DiscordCommandInvokeArguments(command, parameters) {
+class MessageCommandInvokeArguments(bot: TraitorBot, command: Command, val message: Message, parameters: String)
+    : DiscordCommandInvokeArguments(bot, command, parameters) {
     /**
      * The user that invoked this command.
      */
@@ -27,6 +28,10 @@ class MessageCommandInvokeArguments(command: Command, val message: Message, para
     val isFromGuild get() = message.isFromGuild
 
     override fun modify(command: Command, parameters: String): CommandInvokeArguments {
-        return MessageCommandInvokeArguments(command, message, parameters)
+        return MessageCommandInvokeArguments(bot, command, message, parameters)
+    }
+
+    override fun hasGlobalPermission(user: String): Boolean {
+        return bot.hasGlobalPermission(invoker, user)
     }
 }

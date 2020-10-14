@@ -23,6 +23,7 @@ class CommandManager(val bot: TraitorBot) : ListenerAdapter() {
 
     fun registerCommand(command: Command) {
         _commands.add(command)
+        logger.info("Registered command ${command.name}")
     }
 
     fun getCommandsWithName(name: String): Set<Command> = commands.filter { it.hasName(name) }.toSet()
@@ -88,7 +89,7 @@ class CommandManager(val bot: TraitorBot) : ListenerAdapter() {
             1 -> {
                 val command = commands.first()
                 command.execute(MessageCommandInvokeArguments(
-                    command, message, args
+                    bot, command, message, args
                 ))
             }
             2 -> message.channel.sendMessage(

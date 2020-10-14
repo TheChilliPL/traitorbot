@@ -2,7 +2,7 @@ package me.patrykanuszczyk.traitorbot.commands
 
 import me.patrykanuszczyk.traitorbot.commands.arguments.CommandInvokeArguments
 
-class BranchCommand(name: String, vararg commands: Command, private var defaultBranch: Command? = null): Command(name) {
+class BranchCommand(name: String, vararg commands: Command, private val defaultBranch: Command? = null): Command(name) {
     val commands = commands.toSet()
 
     override fun execute(args: CommandInvokeArguments) {
@@ -19,8 +19,8 @@ class BranchCommand(name: String, vararg commands: Command, private var defaultB
     }
 
     fun executeDefaultBranch(args: CommandInvokeArguments) {
-        defaultBranch ?: LambdaCommand("") {
+        (defaultBranch ?: LambdaCommand("") {
             it.reply("Nie znaleziono podanej podkomendy.")
-        }.execute(args)
+        }).execute(args)
     }
 }
