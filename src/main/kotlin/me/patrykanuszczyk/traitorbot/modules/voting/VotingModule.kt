@@ -71,6 +71,10 @@ class VotingModule(bot: TraitorBot) : BotModule(bot), CommandExecutor {
                 }
                 val title = parametersResult.first()
                 val answers = parametersResult.drop(1)
+                if(answers.size > voteEmoji.size) {
+                    message.editMessage("Za dużo odpowiedzi. Maksymalna ilość: ${voteEmoji.size}.").queue()
+                    return
+                }
 
                 val voting = Voting(name, title, answers, message)
 
@@ -109,44 +113,30 @@ class VotingModule(bot: TraitorBot) : BotModule(bot), CommandExecutor {
         }
     }
 
-    fun updateVotingMessage(voting: Voting): MessageAction {
+    fun updateVotingMessage(voting: Voting, ended: Boolean = false): MessageAction {
         val normalizedResults = voting.results.map { it.size }.normalize(20)
         return voting.message.editMessage(
-            MessageBuilder().setContent("").setEmbed(
-                EmbedBuilder()
-                    .setTitle(voting.title)
-                    .setDescription(voting.answers.mapIndexed { i, answer ->
-                        "**$answer:**\n`${"#".repeat(normalizedResults[i]).padEnd(20, ' ')}` " +
-                            "(${voting.results[i].size})"
-                    }.joinToString("\n"))
-                    .setColor(Color.YELLOW)
-                    .apply {
-                        if(voting.name != null)
-                            setFooter("ID: " + voting.name)
+            EmbedBuilder()
+                .setTitle(voting.title)
+                .setDescription("Zagłosowało osób: " + voting.results.flatten().distinct().size)
+                .apply {
+                    for((i, answer) in voting.answers.withIndex()) {
+                        addField(
+                            voteEmoji[i] + " **" + answer + "**",
+                            "`[" + "#".repeat(normalizedResults[i]).padEnd(20)
+                                + "]` ("+voting.results[i].size + ")",
+                            false
+                        )
                     }
-                    .build()
-            ).build()
+                }
+                .setColor(if(ended) Color.GREEN else Color.CYAN)
+                .apply { if(voting.name != null) setFooter("ID: "+voting.name) }
+                .build()
         ).override(true)
     }
 
     fun closeVotingMessage(voting: Voting): MessageAction {
-        val normalizedResults = voting.results.map { it.size }.normalize(20)
-        return voting.message.editMessage(
-            MessageBuilder().setContent("").setEmbed(
-                EmbedBuilder()
-                    .setTitle("Wyniki ankiety: " + voting.title)
-                    .setDescription(voting.answers.mapIndexed { i, answer ->
-                        "**$answer:**\n`${"#".repeat(normalizedResults[i]).padEnd(20, ' ')}` " +
-                            "(${voting.results[i].size})"
-                    }.joinToString("\n"))
-                    .setColor(Color.GREEN)
-                    .apply {
-                        if(voting.name != null)
-                            setFooter("ID: " + voting.name)
-                    }
-                    .build()
-            ).build()
-        ).override(true)
+        return updateVotingMessage(voting, true)
     }
 
     fun addVote(voting: Voting, answer: Int, user: User) {
