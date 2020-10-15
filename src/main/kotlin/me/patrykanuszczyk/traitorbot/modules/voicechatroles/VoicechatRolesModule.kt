@@ -1,5 +1,116 @@
-//package me.patrykanuszczyk.traitorbot.modules.voicechatroles
-//
+package me.patrykanuszczyk.traitorbot.modules.voicechatroles
+
+import me.patrykanuszczyk.traitorbot.TraitorBot
+import me.patrykanuszczyk.traitorbot.commands.BranchCommand
+import me.patrykanuszczyk.traitorbot.commands.Command
+import me.patrykanuszczyk.traitorbot.commands.arguments.DiscordCommandInvokeArguments
+import me.patrykanuszczyk.traitorbot.modules.BotModule
+import net.dv8tion.jda.api.EmbedBuilder
+import net.dv8tion.jda.api.entities.Guild
+import net.dv8tion.jda.api.entities.Member
+import net.dv8tion.jda.api.entities.MessageEmbed
+import net.dv8tion.jda.api.entities.VoiceChannel
+import net.dv8tion.jda.api.events.GenericEvent
+import net.dv8tion.jda.api.events.guild.voice.GuildVoiceUpdateEvent
+import net.dv8tion.jda.api.hooks.EventListener
+import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.transactions.transaction
+
+class VoicechatRolesModule(bot: TraitorBot) : BotModule(bot), EventListener {
+    val listCommand = Command("list") {
+        if(it !is DiscordCommandInvokeArguments || !it.isFromGuild)
+            return@Command it.reply("Musisz być na serwerze aby użyć tej komendy!")
+
+        val guild = it.guild!!
+
+        val roles = getVoicechatRoles(guild)
+
+        it.channel.sendMessage(
+            EmbedBuilder()
+                .setTitle("Obecnie ustawione role VC.")
+                .apply {
+                    roles.map { vcRole ->
+                        val channel = guild.getVoiceChannelById(vcRole.first)?.name
+                            ?: "Nieznany kanał (${vcRole.first})"
+                        val role = guild.getRoleById(vcRole.second)?.asMention
+                            ?: "nieznana rola (${vcRole.second})"
+                        channel to role
+                    }.takeUnless { r -> r.isEmpty() }?.forEach { (channel, role) ->
+                        addField(channel, role, true)
+                    } ?: setDescription("Brak ról VC na serwerze.")
+                }
+                .build()
+        ).complete()
+    }
+
+    val rootCommand = BranchCommand(
+        "vcroles",
+        listCommand
+    ).withAliases("vcr").andRegister(bot)
+
+    override fun onEvent(event: GenericEvent) {
+        if(event !is GuildVoiceUpdateEvent) return
+
+        applyRoles(event.entity, event.channelLeft, event.channelJoined)
+    }
+
+    init {
+        bot.discord.addEventListener(this)
+    }
+
+    /**
+     * Gets VC roles for all the voice channels in the specified [guild].
+     *
+     * @return set of pairs, where the first element is channel ID, and the second is role ID
+     */
+    fun getVoicechatRoles(guild: Guild): Set<Pair<Long, Long>> {
+        return transaction {
+            VoicechatRolesTable.select {
+                VoicechatRolesTable.guild eq guild.idLong
+            }.map {
+                it[VoicechatRolesTable.channel] to it[VoicechatRolesTable.role]
+            }.toSet()
+        }
+    }
+
+    /**
+     * Gets VC roles for the specified voice [channel] in the specified [guild].
+     *
+     * @return set of role IDs
+     */
+    fun getVoicechatRoles(guild: Guild, channel: VoiceChannel): Set<Long> {
+        return transaction {
+            VoicechatRolesTable.select {
+                VoicechatRolesTable.guild.eq(guild.idLong) and
+                    VoicechatRolesTable.channel.eq(channel.idLong)
+            }.map {
+                it[VoicechatRolesTable.role]
+            }.toSet()
+        }
+    }
+
+    fun applyRoles(member: Member, channelLeft: VoiceChannel?, channelJoined: VoiceChannel?) {
+        val guild = member.guild
+
+        val roleIdsToAdd = if(channelJoined != null)
+            getVoicechatRoles(guild, channelJoined)
+        else
+            setOf()
+
+        val roleIdsToRemove = if(channelLeft != null)
+            getVoicechatRoles(guild, channelLeft).filter { it !in roleIdsToAdd }.toSet()
+        else
+            setOf()
+
+        val rolesToAdd = roleIdsToAdd.map { guild.getRoleById(it) }
+
+        val rolesToRemove = roleIdsToRemove.map { guild.getRoleById(it) }
+
+        guild.modifyMemberRoles(member, rolesToAdd, rolesToRemove).complete()
+    }
+}
+
 //import me.patrykanuszczyk.traitorbot.TraitorBot
 //import me.patrykanuszczyk.traitorbot.commands.Command
 //import me.patrykanuszczyk.traitorbot.commands.arguments.CommandInvokeArguments

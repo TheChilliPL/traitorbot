@@ -18,5 +18,5 @@ abstract class CommandInvokeArguments(
 
     abstract fun modify(command: Command, parameters: String): CommandInvokeArguments
 
-    open fun hasGlobalPermission(user: String): Boolean = false
+    open fun hasGlobalPermission(user: String): Boolean = false // ===
 }

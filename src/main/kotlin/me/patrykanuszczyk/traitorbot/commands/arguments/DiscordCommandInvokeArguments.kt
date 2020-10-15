@@ -24,6 +24,8 @@ abstract class DiscordCommandInvokeArguments(bot: TraitorBot, command: Command, 
         channel.sendMessage(message).complete()
     }
 
+    val isFromGuild get() = guild != null
+
     /**
      * The guild in which the command was invoked.
      *

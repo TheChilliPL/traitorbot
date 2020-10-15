@@ -27,5 +27,7 @@ abstract class Command(val name: String) {
         operator fun invoke(name: String, func: (CommandInvokeArguments) -> Unit): Command {
             return LambdaCommand(name, func)
         }
+
+        operator fun invoke(func: (CommandInvokeArguments) -> Unit): Command = invoke("", func)
     }
 }

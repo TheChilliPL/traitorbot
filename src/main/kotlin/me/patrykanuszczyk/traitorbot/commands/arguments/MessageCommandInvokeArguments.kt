@@ -25,8 +25,6 @@ class MessageCommandInvokeArguments(bot: TraitorBot, command: Command, val messa
         message.addReaction(emoji)
     }
 
-    val isFromGuild get() = message.isFromGuild
-
     override fun modify(command: Command, parameters: String): CommandInvokeArguments {
         return MessageCommandInvokeArguments(bot, command, message, parameters)
     }
