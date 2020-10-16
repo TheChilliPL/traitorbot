@@ -6,14 +6,7 @@ import me.patrykanuszczyk.traitorbot.utils.guildOrNull
 import net.dv8tion.jda.api.entities.Message
 
 class MessageCommandInvokeArguments(bot: TraitorBot, command: Command, val message: Message, parameters: String)
-    : DiscordCommandInvokeArguments(bot, command, parameters) {
-    /**
-     * The user that invoked this command.
-     */
-    val invoker get() = message.author
-
-    val invokerMember get() = message.member
-
+    : DiscordCommandInvokeArguments(bot, command, message.author, parameters) {
     override val channel get() = message.channel
 
     /**

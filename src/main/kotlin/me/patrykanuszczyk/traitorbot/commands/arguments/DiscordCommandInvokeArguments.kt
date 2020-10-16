@@ -4,21 +4,20 @@ import me.patrykanuszczyk.traitorbot.TraitorBot
 import me.patrykanuszczyk.traitorbot.commands.Command
 import me.patrykanuszczyk.traitorbot.utils.guildOrNull
 import me.patrykanuszczyk.traitorbot.utils.maybeAs
-import net.dv8tion.jda.api.entities.Guild
-import net.dv8tion.jda.api.entities.GuildChannel
-import net.dv8tion.jda.api.entities.MessageChannel
-import net.dv8tion.jda.api.entities.PrivateChannel
+import net.dv8tion.jda.api.entities.*
 
 /**
  * Represents a command invocation that takes place on Discord.
  */
-abstract class DiscordCommandInvokeArguments(bot: TraitorBot, command: Command, parameters: String)
+abstract class DiscordCommandInvokeArguments(bot: TraitorBot, command: Command, val invoker: User, parameters: String)
     : CommandInvokeArguments(bot, command, parameters) {
     /**
      * The channel in which the command was invoked.
      * It might be the channel of a message sent, of a reaction, or where a timer was initiated.
      */
     abstract val channel: MessageChannel
+
+    val invokerMember: Member? get() = guild?.retrieveMember(invoker)?.complete()
 
     override fun reply(message: String) {
         channel.sendMessage(message).complete()

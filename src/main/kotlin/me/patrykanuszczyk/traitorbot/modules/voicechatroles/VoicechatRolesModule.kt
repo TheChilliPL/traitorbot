@@ -3,17 +3,18 @@ package me.patrykanuszczyk.traitorbot.modules.voicechatroles
 import me.patrykanuszczyk.traitorbot.TraitorBot
 import me.patrykanuszczyk.traitorbot.commands.BranchCommand
 import me.patrykanuszczyk.traitorbot.commands.Command
+import me.patrykanuszczyk.traitorbot.commands.CommandManager
 import me.patrykanuszczyk.traitorbot.commands.arguments.DiscordCommandInvokeArguments
+import me.patrykanuszczyk.traitorbot.commands.parseParameters
 import me.patrykanuszczyk.traitorbot.modules.BotModule
 import net.dv8tion.jda.api.EmbedBuilder
-import net.dv8tion.jda.api.entities.Guild
-import net.dv8tion.jda.api.entities.Member
-import net.dv8tion.jda.api.entities.MessageEmbed
-import net.dv8tion.jda.api.entities.VoiceChannel
+import net.dv8tion.jda.api.Permission
+import net.dv8tion.jda.api.entities.*
 import net.dv8tion.jda.api.events.GenericEvent
 import net.dv8tion.jda.api.events.guild.voice.GuildVoiceUpdateEvent
 import net.dv8tion.jda.api.hooks.EventListener
 import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 
@@ -44,9 +45,62 @@ class VoicechatRolesModule(bot: TraitorBot) : BotModule(bot), EventListener {
         ).complete()
     }
 
+    val setCommand = Command("set") {
+        if(it !is DiscordCommandInvokeArguments || !it.isFromGuild)
+            return@Command it.reply("Musisz być na serwerze aby użyć tej komendy!")
+
+        if(!it.invokerMember!!.hasPermission(Permission.MANAGE_SERVER))
+            return@Command bot.commandManager.sendNoPermissionMessage(it)
+
+        val parse = parseParameters(it.parameters)
+
+        if(parse.failed)
+            return@Command it.reply(parse.failValue!!)
+
+        val parameters = parse.successValue!!
+
+        if(parameters.size < 2)
+            return@Command it.reply("Musisz podać kanał głosowy i rolę.")
+
+        // Parsing voice channel
+        var vc: VoiceChannel?
+
+        val vcString = parameters[0].removeSurrounding("<#", ">")
+
+        vc = vcString.toLongOrNull()?.let { id -> it.guild!!.getVoiceChannelById(id) }
+
+        if(vc == null) {
+            vc = it.guild!!.voiceChannels.singleOrNull { ch -> ch.name.contains(vcString, true) }
+                ?: return@Command it.reply("Nie znaleziono takiego kanału VC lub znaleziono więcej niż jeden.")
+        }
+
+        // Parsing role
+        var role: Role?
+
+        val roleString = parameters[1].removeSurrounding("<@&", ">")
+
+        role = roleString.toLongOrNull()?.let { id -> it.guild!!.getRoleById(id) }
+
+        if(role == null) {
+            role = it.guild!!.roles.singleOrNull { r -> r.name.contains(roleString, true) }
+                ?: return@Command it.reply("Nie znaleziono takiej roli lub znaleziono więcej niż jedną.")
+        }
+
+        // Adding
+        transaction {
+            VoicechatRolesTable.insert { row ->
+                row[guild] = it.guild!!.idLong
+                row[channel] = vc.idLong
+                row[this.role] = role.idLong
+            }
+        }
+
+        it.reply("Pomyślnie utworzono rolę VC. Przy wejściu na kanał ${vc.name} wszyscy dostaną rolę ${role.name}!")
+    }.withAliases("add")
+
     val rootCommand = BranchCommand(
         "vcroles",
-        listCommand
+        listCommand, setCommand
     ).withAliases("vcr").andRegister(bot)
 
     override fun onEvent(event: GenericEvent) {

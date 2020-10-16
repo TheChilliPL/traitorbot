@@ -29,35 +29,33 @@ class DiscordAppender(
     private var noChannelMessageShown = false
 
     override fun append(event: LogEvent) {
-        Thread {
-            try {
-                val discord = TraitorBot.instance?.discord ?: return@Thread
-                discord.awaitReady()
-                if (discord.status != JDA.Status.CONNECTED) return@Thread
-                val channel = discord.getGuildById(guildId)?.getTextChannelById(channelId)
+        try {
+            val discord = TraitorBot.instance?.discord ?: return
+            //discord.awaitReady()
+            if (discord.status != JDA.Status.CONNECTED) return
+            val channel = discord.getGuildById(guildId)?.getTextChannelById(channelId)
 
-                if (channel == null) {
-                    if (!noChannelMessageShown) {
-                        noChannelMessageShown = true
+            if (channel == null) {
+                if (!noChannelMessageShown) {
+                    noChannelMessageShown = true
 
-                        val logger = getLogger(DiscordAppender::class)
-                        logger.error("Couldn't find text channel with the specified ID.")
-                    }
-                    return@Thread
+                    val logger = getLogger(DiscordAppender::class)
+                    logger.error("Couldn't find text channel with the specified ID.")
                 }
-
-                var message = String(layout.toByteArray(event))
-
-                //println(message)
-
-                if (message.length > 2000) {
-                    message = message.take(1999) + "…"
-                }
-
-                channel.sendMessage(message).queue()
-            } catch (exception: Exception) {
+                return
             }
-        }.start()
+
+            var message = String(layout.toByteArray(event))
+
+            //println(message)
+
+            if (message.length > 2000) {
+                message = message.take(1999) + "…"
+            }
+
+            channel.sendMessage(message).queue()
+        } catch (exception: Exception) {
+        }
     }
 
     companion object {
