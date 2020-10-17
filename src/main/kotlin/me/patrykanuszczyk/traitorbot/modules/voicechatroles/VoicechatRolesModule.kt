@@ -14,6 +14,7 @@ import net.dv8tion.jda.api.events.GenericEvent
 import net.dv8tion.jda.api.events.guild.voice.GuildVoiceUpdateEvent
 import net.dv8tion.jda.api.hooks.EventListener
 import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -87,6 +88,16 @@ class VoicechatRolesModule(bot: TraitorBot) : BotModule(bot), EventListener {
         }
 
         // Adding
+        val exists = transaction {
+            !VoicechatRolesTable.select {
+                VoicechatRolesTable.guild eq it.guild!!.idLong
+            }.limit(1).empty()
+        }
+
+        if(exists) {
+            return@Command it.reply("Podana rola VC już istnieje.")
+        }
+
         transaction {
             VoicechatRolesTable.insert { row ->
                 row[guild] = it.guild!!.idLong
@@ -98,9 +109,68 @@ class VoicechatRolesModule(bot: TraitorBot) : BotModule(bot), EventListener {
         it.reply("Pomyślnie utworzono rolę VC. Przy wejściu na kanał ${vc.name} wszyscy dostaną rolę ${role.name}!")
     }.withAliases("add")
 
+    val removeCommand = Command("remove") {
+        if(it !is DiscordCommandInvokeArguments || !it.isFromGuild)
+            return@Command it.reply("Musisz być na serwerze aby użyć tej komendy!")
+
+        if(!it.invokerMember!!.hasPermission(Permission.MANAGE_SERVER))
+            return@Command bot.commandManager.sendNoPermissionMessage(it)
+
+        val parse = parseParameters(it.parameters)
+
+        if(parse.failed)
+            return@Command it.reply(parse.failValue!!)
+
+        val parameters = parse.successValue!!
+
+        if(parameters.size < 2)
+            return@Command it.reply("Musisz podać kanał głosowy i rolę.")
+
+        val vcString = parameters[0].removeSurrounding("<#", ">")
+
+        var vcId = vcString.toLongOrNull()
+
+        if(vcId == null) {
+            vcId = it.guild!!.voiceChannels.singleOrNull { ch -> ch.name.contains(vcString, true) }?.idLong
+                ?: return@Command it.reply("Nie znaleziono takiego kanału VC lub znaleziono więcej niż jeden.")
+        }
+
+        val roleString = parameters[1].removeSurrounding("<@&", ">")
+
+        var roleId = roleString.toLongOrNull()
+
+        if(roleId == null) {
+            roleId = it.guild!!.roles.singleOrNull { r -> r.name.contains(roleString, true) }?.idLong
+                ?: return@Command it.reply("Nie znaleziono takiej roli lub znaleziono więcej niż jedną.")
+        }
+
+        // Removing
+        val exists = transaction {
+            !VoicechatRolesTable.select {
+                VoicechatRolesTable.guild.eq(it.guild!!.idLong) and
+                    VoicechatRolesTable.channel.eq(vcId) and
+                    VoicechatRolesTable.role.eq(roleId)
+            }.limit(1).empty()
+        }
+
+        if(!exists) {
+            return@Command it.reply("Podana rola VC nie istnieje.")
+        }
+
+        transaction {
+            VoicechatRolesTable.deleteWhere {
+                VoicechatRolesTable.guild.eq(it.guild!!.idLong) and
+                    VoicechatRolesTable.channel.eq(vcId) and
+                    VoicechatRolesTable.role.eq(roleId)
+            }
+        }
+
+        it.reply("Usunięto podaną rolę VC!")
+    }.withAliases("del", "delete")
+
     val rootCommand = BranchCommand(
         "vcroles",
-        listCommand, setCommand
+        listCommand, setCommand, removeCommand
     ).withAliases("vcr").andRegister(bot)
 
     override fun onEvent(event: GenericEvent) {
@@ -118,13 +188,13 @@ class VoicechatRolesModule(bot: TraitorBot) : BotModule(bot), EventListener {
      *
      * @return set of pairs, where the first element is channel ID, and the second is role ID
      */
-    fun getVoicechatRoles(guild: Guild): Set<Pair<Long, Long>> {
+    fun getVoicechatRoles(guild: Guild): List<Pair<Long, Long>> {
         return transaction {
             VoicechatRolesTable.select {
                 VoicechatRolesTable.guild eq guild.idLong
             }.map {
                 it[VoicechatRolesTable.channel] to it[VoicechatRolesTable.role]
-            }.toSet()
+            }.toList()
         }
     }
 
