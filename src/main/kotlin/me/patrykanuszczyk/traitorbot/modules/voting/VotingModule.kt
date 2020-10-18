@@ -10,10 +10,11 @@ import me.patrykanuszczyk.traitorbot.commands.parseParameters
 import me.patrykanuszczyk.traitorbot.modules.BotModule
 import me.patrykanuszczyk.traitorbot.utils.alphanumerics
 import me.patrykanuszczyk.traitorbot.utils.getRandomString
+import me.patrykanuszczyk.traitorbot.utils.normalize
+import net.dv8tion.jda.api.EmbedBuilder
 import org.jetbrains.annotations.Contract
 
 class VotingModule(bot: TraitorBot) : BotModule(bot) {
-
     val newCommand = Command("new") {
         if(it !is DiscordCommandInvokeArguments || !it.isFromGuild) {
             return@Command it.reply("Tej komendy można użyć tylko na serwerze!")
@@ -37,6 +38,19 @@ class VotingModule(bot: TraitorBot) : BotModule(bot) {
             return@Command it.reply("Jeden z wykorzystanych parametrów nie jest obecnie obsługiwany.")
         }
 
+        if(parameters.failed)
+            return@Command it.reply(parameters.failValue!!)
+
+        val answerCount = parameters.successValue!!.size - 1
+
+        if(answerCount < 2)
+            return@Command it.reply("Musisz podać tytuł i co najmniej dwie odpowiedzi.")
+        else if(answerCount > voteEmoji.size)
+            return@Command it.reply("Maksymalna ilość odpowiedzi to $answerCount.")
+
+        val title = parameters.successValue!!.first()
+        val answers = parameters.successValue!!.drop(1)
+
         // Ensure guild voting map exists
         votings.computeIfAbsent(it.guild!!.idLong) { mutableMapOf() }
 
@@ -47,16 +61,35 @@ class VotingModule(bot: TraitorBot) : BotModule(bot) {
             } while(name in votings[it.guild!!.idLong]!!)
         }
 
-        //val voting = Voting(name!!, )
+        val message = it.channel.sendMessage(":alarm_clock: Przygotowywanie głosowania…").complete()
+
+        val voting = Voting(name!!, title, answers, message)
+        votingMessageCache[message.idLong] = voting
+        updateVotingMessage(voting)
     }.withAliases("create", "add")
 
     val rootCommand = BranchCommand(
         "voting",
         newCommand
-    ).andRegister(bot)
+    ).withAliases("vote").andRegister(bot)
 
     var votings = mutableMapOf<Long, MutableMap<String, Voting>>()
+    var votingMessageCache = mutableMapOf<Long, Voting>()
     val voteEmoji = listOf("1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️⃣")
+
+    fun updateVotingMessage(voting: Voting) {
+        voting.message.editMessage(
+            EmbedBuilder()
+                .setTitle(voting.title)
+                .apply {
+                    for((answer, votes) in voting.answers zip voting.results.map { it.size }.normalize(20)) {
+                        addField(answer, "`["+"#".repeat(votes).padEnd(20)+"]`", false)
+                    }
+                }
+                .setFooter("ID: " + voting.name)
+                .build()
+        ).override(true).complete()
+    }
 }
 //import me.patrykanuszczyk.traitorbot.TraitorBot
 //import me.patrykanuszczyk.traitorbot.commands.*

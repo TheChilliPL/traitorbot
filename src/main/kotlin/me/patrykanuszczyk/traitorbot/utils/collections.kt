@@ -8,7 +8,8 @@ fun List<Int>.normalize(max: Int): List<Int> {
 }
 
 /**
- * Returns the single element matching the given [predicate], or `null` if there is no or more than one matching element.
+ * Returns the single element matching the given [predicate],
+ * or `null` if there is no or more than one matching element.
  */
 inline fun <T> Iterable<T>.singleOrNull(predicate: (T) -> Boolean): T? {
     var single: T? = null
@@ -21,4 +22,12 @@ inline fun <T> Iterable<T>.singleOrNull(predicate: (T) -> Boolean): T? {
         }
     }
     return single
+}
+
+fun <E> MutableCollection<E>.addAll(vararg elements: E): Boolean {
+    return this.addAll(elements)
+}
+
+fun <E> MutableCollection<E>.addUnique(element: E) {
+    if(!contains(element)) add(element)
 }

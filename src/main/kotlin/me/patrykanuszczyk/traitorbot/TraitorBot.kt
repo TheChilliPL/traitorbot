@@ -10,9 +10,11 @@ import me.patrykanuszczyk.traitorbot.modules.admin.AdminModule
 import me.patrykanuszczyk.traitorbot.modules.prefix.GuildPrefix
 import me.patrykanuszczyk.traitorbot.modules.prefix.GuildPrefixModule
 import me.patrykanuszczyk.traitorbot.modules.voicechatroles.VoicechatRolesModule
+import me.patrykanuszczyk.traitorbot.modules.voting.VotingModule
 import me.patrykanuszczyk.traitorbot.permissions.GlobalPermission
 import me.patrykanuszczyk.traitorbot.permissions.GlobalPermissionsTable
 import me.patrykanuszczyk.traitorbot.utils.Result
+import me.patrykanuszczyk.traitorbot.utils.addAll
 import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.JDABuilder
 import net.dv8tion.jda.api.OnlineStatus
@@ -45,9 +47,12 @@ class TraitorBot(secretConfig: SecretConfig) {
     init {
         instance = this
         discord = JDABuilder.createDefault(secretConfig.botToken).addEventListeners(commandManager).build()
-        _modules.add(AdminModule(this))
-        _modules.add(GuildPrefixModule(this))
-        _modules.add(VoicechatRolesModule(this))
+        _modules.addAll(
+            AdminModule(this),
+            GuildPrefixModule(this),
+            VoicechatRolesModule(this),
+            VotingModule(this)
+        )
     }
 
     fun hasGlobalPermission(user: User, permission: String): Boolean {
@@ -63,14 +68,6 @@ class TraitorBot(secretConfig: SecretConfig) {
         return transaction {
             GlobalPermission.find { GlobalPermissionsTable.user eq id }.toList().map { it.permission }
         }
-    }
-
-    @Deprecated(
-        "Moved to CommandManager and renamed to parseCommandMessage.",
-        ReplaceWith("this.commandManager.parseCommandMessage(message)"), DeprecationLevel.ERROR
-    )
-    fun parseCommand(message: Message): Pair<String, String>? {
-        return commandManager.parseCommandMessage(message)
     }
 
     /**
