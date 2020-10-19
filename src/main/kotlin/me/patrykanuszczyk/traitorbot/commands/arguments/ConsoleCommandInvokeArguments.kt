@@ -12,4 +12,6 @@ class ConsoleCommandInvokeArguments(bot: TraitorBot, command: Command, parameter
     override fun modify(command: Command, parameters: String): ConsoleCommandInvokeArguments {
         return ConsoleCommandInvokeArguments(bot, command, parameters)
     }
+
+    override fun hasGlobalPermission(user: String): Boolean = true
 }
