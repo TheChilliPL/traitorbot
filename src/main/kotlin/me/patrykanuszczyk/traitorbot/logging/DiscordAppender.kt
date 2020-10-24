@@ -13,8 +13,6 @@ import org.apache.logging.log4j.core.config.plugins.PluginAttribute
 import org.apache.logging.log4j.core.config.plugins.PluginElement
 import org.apache.logging.log4j.core.config.plugins.PluginFactory
 import java.io.Serializable
-import java.lang.Exception
-import java.util.logging.LogManager
 
 @Plugin(
     name = "DiscordAppender",
@@ -27,18 +25,17 @@ class DiscordAppender(
     layout: Layout<out Serializable>?,
     val guildId: String,
     val channelId: String
-)
-    : AbstractAppender(name, filter, layout)
-{
+) : AbstractAppender(name, filter, layout) {
     private var noChannelMessageShown = false
 
     override fun append(event: LogEvent) {
         try {
             val discord = TraitorBot.instance?.discord ?: return
-            if(discord.status != JDA.Status.CONNECTED) return
+            //discord.awaitReady()
+            if (discord.status != JDA.Status.CONNECTED) return
             val channel = discord.getGuildById(guildId)?.getTextChannelById(channelId)
 
-            if(channel == null) {
+            if (channel == null) {
                 if (!noChannelMessageShown) {
                     noChannelMessageShown = true
 
@@ -50,12 +47,15 @@ class DiscordAppender(
 
             var message = String(layout.toByteArray(event))
 
-            if(message.length > 2000) {
+            //println(message)
+
+            if (message.length > 2000) {
                 message = message.take(1999) + "…"
             }
 
             channel.sendMessage(message).queue()
-        } catch(exception: Exception) {}
+        } catch (exception: Exception) {
+        }
     }
 
     companion object {

@@ -8,12 +8,12 @@ abstract class Result<S, F> {
     val successValue get() = if(this is Success) value else null
     val failValue get() = if(this is Failure) value else null
 
-    fun ifSuccess(func: (Success<S, F>) -> Unit): Result<S, F> {
+    inline fun ifSuccess(func: (Success<S, F>) -> Unit): Result<S, F> {
         if(successful) func(this as Success<S, F>)
         return this
     }
 
-    fun ifFailed(func: (Failure<S, F>) -> Unit): Result<S, F> {
+    inline fun ifFailed(func: (Failure<S, F>) -> Unit): Result<S, F> {
         if(!successful) func(this as Failure<S, F>)
         return this
     }

@@ -1,76 +1,66 @@
 package me.patrykanuszczyk.traitorbot.modules.prefix
 
 import me.patrykanuszczyk.traitorbot.TraitorBot
+import me.patrykanuszczyk.traitorbot.commands.BranchCommand
 import me.patrykanuszczyk.traitorbot.commands.Command
-import me.patrykanuszczyk.traitorbot.commands.CommandExecutionArguments
-import me.patrykanuszczyk.traitorbot.commands.CommandExecutor
+import me.patrykanuszczyk.traitorbot.commands.arguments.MessageCommandInvokeArguments
 import me.patrykanuszczyk.traitorbot.exposedutils.insertOrUpdate
 import me.patrykanuszczyk.traitorbot.modules.BotModule
 import net.dv8tion.jda.api.Permission
 import org.jetbrains.exposed.sql.deleteIgnoreWhere
 import org.jetbrains.exposed.sql.transactions.transaction
 
-class GuildPrefixModule(bot: TraitorBot) : BotModule(bot), CommandExecutor {
-    val prefixCommand = Command(
+class GuildPrefixModule(bot: TraitorBot): BotModule(bot) {
+    val prefixCommand = BranchCommand(
         "prefix",
-        setOf("prf"),
-        "Sprawdza lub zmienia prefix bota na danym serwerze",
-        this
-    )
 
-    init {
-        bot.commandManager.registerCommand(prefixCommand)
-    }
+        Command("set") { args ->
+            if(args !is MessageCommandInvokeArguments || !args.isFromGuild)
+                return@Command args.reply("Ta komenda musi być wykonana na serwerze")
 
-    override fun executeCommand(args: CommandExecutionArguments) {
-        if (args.command != prefixCommand) return
+            if(!args.invokerMember!!.hasPermission(Permission.MANAGE_SERVER))
+                return@Command bot.commandManager.sendNoPermissionMessage(args)
 
-        val cmdArgs = args.arguments.split(" ", limit = 2)
-
-        when (cmdArgs.firstOrNull()) {
-            "set" -> {
-                if (args.member?.hasPermission(Permission.MANAGE_SERVER) == false) {
-                    bot.commandManager.sendNoPermissionMessage(args)
-                } else if (cmdArgs.size <= 1 || cmdArgs[1].isEmpty()) {
-                    args.channel.sendMessage("${args.user.asMention}, prefix nie może być pusty.").submit()
-                } else {
-                    transaction {
-                        GuildPrefixTable.insertOrUpdate(
-                            GuildPrefixTable.prefix
-                        ) {
-                            it[id] = args.guild.idLong
-                            it[prefix] = cmdArgs[1]
-                        }
-                    }
-                    args.channel.sendMessage("${args.user.asMention}, prefix serwera zmieniono!")
-                        .submit()
+            transaction {
+                GuildPrefixTable.insertOrUpdate(
+                    GuildPrefixTable.prefix
+                ) {
+                    it[id] = args.guild!!.idLong
+                    it[prefix] = args.parameters
                 }
             }
-            in setOf("remove", "delete", "del") -> {
-                if (args.member?.hasPermission(Permission.MANAGE_SERVER) == false) {
-                    bot.commandManager.sendNoPermissionMessage(args)
-                } else {
-                    transaction {
-                        GuildPrefixTable.deleteIgnoreWhere {
-                            GuildPrefixTable.id eq args.guild.idLong
-                        }
-                    }
-                    args.channel.sendMessage("${args.user.asMention}, prefix został usunięty!")
-                        .submit()
+            args.reply("Zmieniono prefix serwera na: `${args.parameters}`")
+        }.withAliases("add"),
+
+        Command("remove") { args ->
+            if(args !is MessageCommandInvokeArguments || !args.isFromGuild)
+                return@Command args.reply("Ta komenda musi być wykonana na serwerze")
+
+            if(!args.invokerMember!!.hasPermission(Permission.MANAGE_SERVER))
+                return@Command bot.commandManager.sendNoPermissionMessage(args)
+
+            transaction {
+                GuildPrefixTable.deleteIgnoreWhere {
+                    GuildPrefixTable.id eq args.guild!!.idLong
                 }
             }
-            else -> when (val prefix = bot.getPrefixFor(args.guild)) {
-                null -> {
-                    args.channel.sendMessage(
-                        "${args.user.asMention}, obecnie nie ma ustawionego prefixu na tym serwerze."
-                    ).submit()
-                }
-                else -> {
-                    args.channel.sendMessage(
-                        "${args.user.asMention}, obecny prefix na tym serwerze to `${prefix}`."
-                    ).submit()
-                }
-            }
+            args.reply("Usunięto prefix serwera.")
+        }.withAliases("del", "delete"),
+
+        defaultBranch = Command("get") { args ->
+            if(args !is MessageCommandInvokeArguments)
+                return@Command args.reply("Ta komenda musi być wywołana na Discordzie")
+
+            if(!args.isFromGuild)
+                return@Command args.reply("Ta komenda musi być wykonana na serwerze")
+
+            val prefix = bot.getPrefixFor(args.guild)
+
+            args.reply(
+                (if(prefix != null) "Obecny prefix to: `$prefix`." else "Nie ma ustawionego prefixu!") +
+                    "\nAby zmienić prefix, użyj komendy `prefix set <prefix>` " +
+                    "(potrzebujesz uprawnień zarządzania serwerem)."
+            )
         }
-    }
+    ).andRegister(bot)
 }

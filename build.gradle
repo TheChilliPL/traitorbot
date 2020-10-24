@@ -5,7 +5,7 @@ plugins {
 }
 
 group "me.patrykanuszczyk"
-version "0.1.0"
+version "0.2.0"
 mainClassName = "me.patrykanuszczyk.traitorbot.TraitorBotKt"
 
 repositories {
@@ -51,4 +51,5 @@ classes.dependsOn(copyLog4jConfig)
 shadowJar {
     archiveClassifier.set("")
     //archiveVersion.set("")
+    exclude 'secret.json'
 }
