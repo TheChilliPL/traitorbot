@@ -2,7 +2,6 @@ package me.patrykanuszczyk.traitorbot.commands.arguments
 
 import me.patrykanuszczyk.traitorbot.TraitorBot
 import me.patrykanuszczyk.traitorbot.commands.Command
-import me.patrykanuszczyk.traitorbot.utils.guildOrNull
 import net.dv8tion.jda.api.entities.Message
 
 class MessageCommandInvokeArguments(bot: TraitorBot, command: Command, val message: Message, parameters: String)

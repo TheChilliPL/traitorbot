@@ -8,5 +8,5 @@ class Voting (
     val answers: List<String>,
     val message: Message
 ) {
-    var results: List<MutableList<Long>> = List(answers.size) { mutableListOf<Long>() }
+    var results: List<MutableSet<Long>> = List(answers.size) { mutableSetOf<Long>() }
 }
