@@ -3,8 +3,10 @@ package me.patrykanuszczyk.traitorbot.modules.admin
 import me.patrykanuszczyk.traitorbot.TraitorBot
 import me.patrykanuszczyk.traitorbot.commands.*
 import me.patrykanuszczyk.traitorbot.commands.arguments.CommandInvokeArguments
+import me.patrykanuszczyk.traitorbot.commands.arguments.DiscordCommandInvokeArguments
 import me.patrykanuszczyk.traitorbot.modules.BotModule
 import me.patrykanuszczyk.traitorbot.utils.Result
+import java.time.Duration
 import kotlin.system.exitProcess
 
 class AdminModule(bot: TraitorBot) : BotModule(bot) {
@@ -55,4 +57,18 @@ class AdminModule(bot: TraitorBot) : BotModule(bot) {
             """.trimIndent()
         )
     }.withAliases("ptest").andRegister(bot)
+
+    val pingCommand = Command("ping") {
+        if (it !is DiscordCommandInvokeArguments)
+            return@Command it.reply("Ta komenda musi być wykonana na Discordzie")
+
+        val msg = it.channel
+            .sendMessage(":timer: Testowanie pingu...").complete()
+            .editMessage(":timer: Testowanie pingu...").complete()
+
+        val ping = Duration.between(msg.timeCreated, msg.timeEdited!!).toNanos()
+            .toFloat() / 1e6
+
+        msg.editMessage("Ping wynosi $ping ms!").complete()
+    }.andRegister(bot)
 }
