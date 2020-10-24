@@ -9,6 +9,7 @@ import me.patrykanuszczyk.traitorbot.modules.BotModule
 import me.patrykanuszczyk.traitorbot.modules.admin.AdminModule
 import me.patrykanuszczyk.traitorbot.modules.prefix.GuildPrefix
 import me.patrykanuszczyk.traitorbot.modules.prefix.GuildPrefixModule
+import me.patrykanuszczyk.traitorbot.modules.vcmove.VoicechatMoveModule
 import me.patrykanuszczyk.traitorbot.modules.voicechatroles.VoicechatRolesModule
 import me.patrykanuszczyk.traitorbot.modules.voting.VotingModule
 import me.patrykanuszczyk.traitorbot.permissions.GlobalPermission
@@ -50,6 +51,7 @@ class TraitorBot(secretConfig: SecretConfig) {
         _modules.addAll(
             AdminModule(this),
             GuildPrefixModule(this),
+            VoicechatMoveModule(this),
             VoicechatRolesModule(this),
             VotingModule(this)
         )
