@@ -32,8 +32,9 @@ import kotlin.system.exitProcess
 
 class TraitorBot(secretConfig: SecretConfig) {
     val database: Database = Database.connect(
-        secretConfig.databaseAuth!!.url!!,
-        driver = "com.mysql.jdbc.Driver",
+        secretConfig.databaseAuth!!.url!! +
+            "?useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=UTC",
+        driver = "com.mysql.cj.jdbc.Driver",
         user = secretConfig.databaseAuth.user!!,
         password = secretConfig.databaseAuth.password!!
     )
