@@ -57,18 +57,4 @@ class AdminModule(bot: TraitorBot) : BotModule(bot) {
             """.trimIndent()
         )
     }.withAliases("ptest").andRegister(bot)
-
-    val pingCommand = Command("ping") {
-        if (it !is DiscordCommandInvokeArguments)
-            return@Command it.reply("Ta komenda musi być wykonana na Discordzie")
-
-        val msg = it.channel
-            .sendMessage(":timer: Testowanie pingu...").complete()
-            .editMessage(":timer: Testowanie pingu...").complete()
-
-        val ping = Duration.between(msg.timeCreated, msg.timeEdited!!).toNanos()
-            .toFloat() / 1e6
-
-        msg.editMessage("Ping wynosi $ping ms!").complete()
-    }.andRegister(bot)
 }

@@ -7,6 +7,7 @@ import com.google.gson.stream.JsonReader
 import me.patrykanuszczyk.traitorbot.commands.CommandManager
 import me.patrykanuszczyk.traitorbot.modules.BotModule
 import me.patrykanuszczyk.traitorbot.modules.admin.AdminModule
+import me.patrykanuszczyk.traitorbot.modules.ping.PingModule
 import me.patrykanuszczyk.traitorbot.modules.prefix.GuildPrefix
 import me.patrykanuszczyk.traitorbot.modules.prefix.GuildPrefixModule
 import me.patrykanuszczyk.traitorbot.modules.vcmove.VoicechatMoveModule
@@ -51,6 +52,7 @@ class TraitorBot(secretConfig: SecretConfig) {
         _modules.addAll(
             AdminModule(this),
             GuildPrefixModule(this),
+            PingModule(this),
             VoicechatMoveModule(this),
             VoicechatRolesModule(this),
             VotingModule(this)
