@@ -1,6 +1,5 @@
 package me.patrykanuszczyk.traitorbot.commands
 
-import com.mysql.fabric.xmlrpc.base.Param
 import me.patrykanuszczyk.traitorbot.utils.Result
 import java.util.*
 

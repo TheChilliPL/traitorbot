@@ -25,7 +25,7 @@ class DiscordAppender(
     layout: Layout<out Serializable>?,
     val guildId: String,
     val channelId: String
-) : AbstractAppender(name, filter, layout) {
+) : AbstractAppender(name, filter, layout, false, null) {
     private var noChannelMessageShown = false
 
     override fun append(event: LogEvent) {

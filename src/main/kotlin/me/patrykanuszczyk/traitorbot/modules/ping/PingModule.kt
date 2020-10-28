@@ -17,7 +17,7 @@ class PingModule(bot: TraitorBot) : BotModule(bot) {
 
         var amount: Int? = 1
 
-        val parameters = parseParameters(
+        parseParameters(
             args.parameters,
             Parameter("a", "amount", getInput = true) { amount = it!!.toIntOrNull() }
         ).fail { return@Command args.reply(it) }
