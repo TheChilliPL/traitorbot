@@ -85,7 +85,7 @@ class CommandManager(val bot: TraitorBot) : ListenerAdapter() {
         logger.info("Executing command: $name $args")
 
         when(commands.size) {
-            0 -> message.channel.sendMessage("${message.author.asMention}, nie znalazłem takiej komendy!").submit()
+            0 -> message.channel.sendMessage("${message.author.asMention}, nie znalazłem takiej komendy!").queue()
             1 -> {
                 val command = commands.first()
                 command.execute(MessageCommandInvokeArguments(
@@ -96,7 +96,7 @@ class CommandManager(val bot: TraitorBot) : ListenerAdapter() {
                 "Jest więcej niż jedna komenda o podanym aliasie, ${message.author.asMention}.\n" +
                     "Prosimy użyć właściwej nazwy:\n" +
                     commands.joinToString("\n") { " - `${it.name}`" }
-            ).submit()
+            ).queue()
         }
     }
 

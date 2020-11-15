@@ -7,6 +7,8 @@ import com.google.gson.stream.JsonReader
 import me.patrykanuszczyk.traitorbot.commands.CommandManager
 import me.patrykanuszczyk.traitorbot.modules.BotModule
 import me.patrykanuszczyk.traitorbot.modules.admin.AdminModule
+import me.patrykanuszczyk.traitorbot.modules.mee6levels.Mee6LevelsModule
+import me.patrykanuszczyk.traitorbot.modules.ping.PingModule
 import me.patrykanuszczyk.traitorbot.modules.prefix.GuildPrefix
 import me.patrykanuszczyk.traitorbot.modules.prefix.GuildPrefixModule
 import me.patrykanuszczyk.traitorbot.modules.vcmove.VoicechatMoveModule
@@ -31,8 +33,9 @@ import kotlin.system.exitProcess
 
 class TraitorBot(secretConfig: SecretConfig) {
     val database: Database = Database.connect(
-        secretConfig.databaseAuth!!.url!!,
-        driver = "com.mysql.jdbc.Driver",
+        secretConfig.databaseAuth!!.url!! +
+            "?useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=UTC",
+        driver = "com.mysql.cj.jdbc.Driver",
         user = secretConfig.databaseAuth.user!!,
         password = secretConfig.databaseAuth.password!!
     )
@@ -51,6 +54,8 @@ class TraitorBot(secretConfig: SecretConfig) {
         _modules.addAll(
             AdminModule(this),
             GuildPrefixModule(this),
+            Mee6LevelsModule(this),
+            PingModule(this),
             VoicechatMoveModule(this),
             VoicechatRolesModule(this),
             VotingModule(this)
