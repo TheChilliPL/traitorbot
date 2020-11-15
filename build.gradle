@@ -5,7 +5,7 @@ plugins {
 }
 
 group "me.patrykanuszczyk"
-version "0.3.0"
+version "0.3.1"
 mainClassName = "me.patrykanuszczyk.traitorbot.TraitorBotKt"
 
 repositories {
@@ -39,18 +39,19 @@ test {
 }
 
 task copyLog4jConfig {
-    [
-            "$buildDir/classes/kotlin/main",
-            "$buildDir/libs"
-    ].each { dest ->
-        copy {
-            from '.'
-            into dest
-            include 'log4j2.properties'
-            include 'secret.json'
+    doLast {
+        [
+                "$buildDir/classes/kotlin/main",
+                "$buildDir/libs"
+        ].each { dest ->
+            copy {
+                from '.'
+                into dest
+                include 'log4j2.properties'
+                include 'secret.json'
+            }
         }
     }
-
 }
 
 classes.dependsOn(copyLog4jConfig)
