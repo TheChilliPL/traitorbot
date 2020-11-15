@@ -1,21 +1,30 @@
 package me.patrykanuszczyk.traitorbot.modules.mee6levels
 
+import com.google.gson.Gson
 import com.google.gson.JsonParser
 import com.google.gson.stream.JsonReader
+import com.google.gson.stream.JsonWriter
 import me.patrykanuszczyk.traitorbot.TraitorBot
 import me.patrykanuszczyk.traitorbot.commands.Command
+import me.patrykanuszczyk.traitorbot.commands.CommandManager
 import me.patrykanuszczyk.traitorbot.commands.arguments.DiscordCommandInvokeArguments
 import me.patrykanuszczyk.traitorbot.modules.BotModule
 import me.patrykanuszczyk.traitorbot.utils.asType
 import me.patrykanuszczyk.traitorbot.utils.inputOrErrorStream
 import me.patrykanuszczyk.traitorbot.utils.niceFormat
 import net.dv8tion.jda.api.EmbedBuilder
+import org.apache.logging.log4j.LogManager
+import org.apache.logging.log4j.Logger
+import org.apache.logging.log4j.message.Message
+import org.apache.logging.log4j.message.MessageFactory
 import java.awt.Color
 import java.net.HttpURLConnection
 import java.net.URL
 import kotlin.math.roundToInt
 
 class Mee6LevelsModule(bot: TraitorBot) : BotModule(bot) {
+    val logger: Logger = LogManager.getLogger(Mee6LevelsModule::class.java)
+
     val mee6LevelsCommand = Command("mee6levels") {
         if(it !is DiscordCommandInvokeArguments)
             return@Command it.reply("Musisz być na Discordzie aby użyć tej komendy!")
@@ -40,15 +49,26 @@ class Mee6LevelsModule(bot: TraitorBot) : BotModule(bot) {
             requestMethod = "GET"
             connectTimeout = 5000
             readTimeout = 5000
+            setRequestProperty("User-Agent", "Mozilla/5.0")
         }
+
+        logger.debug("Connecting to $url with status ${con.responseCode}")
 
         val reader = JsonReader(con.inputOrErrorStream.reader())
 
-        val response = JsonParser.parseReader(reader).asJsonObject
+        val responseElement = JsonParser.parseReader(reader)
+
+        if(!responseElement.isJsonObject) {
+            return@Command it.reply("Błąd parsowania obiektu. Kod błędu ${con.responseCode}.")
+        }
+
+        val response = responseElement.asJsonObject
+
+        //if(logger.isDebugEnabled) logger.debug("JSON received: " + Gson().toJson(response))
 
         if(response.has("error"))
             return@Command it.reply("""
-                Mee6 API returned an error (code ${con.responseCode}).
+                API Mee6 zwróciło błąd (kod ${con.responseCode}).
                 ```
                 ${response.getAsJsonObject("error")["message"].asString}
                 ```
