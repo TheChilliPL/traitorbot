@@ -18,7 +18,7 @@ import net.dv8tion.jda.api.hooks.EventListener
 
 class VoicechatRolesModule(bot: TraitorBot) : BotModule(bot), EventListener {
     val listCommand = Command("list") {
-        if(it !is DiscordCommandInvokeArguments || !it.isFromGuild)
+        if (it !is DiscordCommandInvokeArguments || !it.isFromGuild)
             return@Command it.reply("Musisz być na serwerze aby użyć tej komendy!")
 
         val guild = it.guild!!
@@ -44,17 +44,17 @@ class VoicechatRolesModule(bot: TraitorBot) : BotModule(bot), EventListener {
     }
 
     val setCommand = Command("set") {
-        if(it !is DiscordCommandInvokeArguments || !it.isFromGuild)
+        if (it !is DiscordCommandInvokeArguments || !it.isFromGuild)
             return@Command it.reply("Musisz być na serwerze aby użyć tej komendy!")
 
-        if(!it.invokerMember!!.hasPermission(Permission.MANAGE_SERVER))
+        if (!it.invokerMember!!.hasPermission(Permission.MANAGE_SERVER))
             return@Command bot.commandManager.sendNoPermissionMessage(it)
 
         val parameters = parseParameters(it.parameters).fail { f ->
             return@Command it.reply(f)
         }
 
-        if(parameters.size < 2)
+        if (parameters.size < 2)
             return@Command it.reply("Musisz podać kanał głosowy i rolę.")
 
         // Parsing voice channel
@@ -64,7 +64,7 @@ class VoicechatRolesModule(bot: TraitorBot) : BotModule(bot), EventListener {
 
         vc = vcString.toLongOrNull()?.let { id -> it.guild!!.getVoiceChannelById(id) }
 
-        if(vc == null) {
+        if (vc == null) {
             vc = it.guild!!.voiceChannels.singleOrNull { ch -> ch.name.contains(vcString, true) }
                 ?: return@Command it.reply("Nie znaleziono takiego kanału VC lub znaleziono więcej niż jeden.")
         }
@@ -76,7 +76,7 @@ class VoicechatRolesModule(bot: TraitorBot) : BotModule(bot), EventListener {
 
         role = roleString.toLongOrNull()?.let { id -> it.guild!!.getRoleById(id) }
 
-        if(role == null) {
+        if (role == null) {
             role = it.guild!!.roles.singleOrNull { r -> r.name.contains(roleString, true) }
                 ?: return@Command it.reply("Nie znaleziono takiej roli lub znaleziono więcej niż jedną.")
         }
@@ -84,33 +84,35 @@ class VoicechatRolesModule(bot: TraitorBot) : BotModule(bot), EventListener {
         // Adding
         val existed = !setVoicechatRole(vc, role)
 
-        if(existed) {
+        if (existed) {
             return@Command it.reply("Podana rola VC już istnieje.")
         }
 
-        it.reply("Pomyślnie utworzono rolę VC." +
-            "Przy wejściu na kanał **${vc.name}** wszyscy dostaną rolę **${role.name}**!")
+        it.reply(
+            "Pomyślnie utworzono rolę VC." +
+                "Przy wejściu na kanał **${vc.name}** wszyscy dostaną rolę **${role.name}**!"
+        )
     }.withAliases("add")
 
     val removeCommand = Command("remove") {
-        if(it !is DiscordCommandInvokeArguments || !it.isFromGuild)
+        if (it !is DiscordCommandInvokeArguments || !it.isFromGuild)
             return@Command it.reply("Musisz być na serwerze aby użyć tej komendy!")
 
-        if(!it.invokerMember!!.hasPermission(Permission.MANAGE_SERVER))
+        if (!it.invokerMember!!.hasPermission(Permission.MANAGE_SERVER))
             return@Command bot.commandManager.sendNoPermissionMessage(it)
 
         val parameters = parseParameters(it.parameters).fail { f ->
             return@Command it.reply(f)
         }
 
-        if(parameters.size < 2)
+        if (parameters.size < 2)
             return@Command it.reply("Musisz podać kanał głosowy i rolę.")
 
         val vcString = parameters[0].removeSurrounding("<#", ">")
 
         var vcId = vcString.toLongOrNull()
 
-        if(vcId == null) {
+        if (vcId == null) {
             vcId = it.guild!!.voiceChannels.singleOrNull { ch -> ch.name.contains(vcString, true) }?.idLong
                 ?: return@Command it.reply("Nie znaleziono takiego kanału VC lub znaleziono więcej niż jeden.")
         }
@@ -119,7 +121,7 @@ class VoicechatRolesModule(bot: TraitorBot) : BotModule(bot), EventListener {
 
         var roleId = roleString.toLongOrNull()
 
-        if(roleId == null) {
+        if (roleId == null) {
             roleId = it.guild!!.roles.singleOrNull { r -> r.name.contains(roleString, true) }?.idLong
                 ?: return@Command it.reply("Nie znaleziono takiej roli lub znaleziono więcej niż jedną.")
         }
@@ -127,7 +129,7 @@ class VoicechatRolesModule(bot: TraitorBot) : BotModule(bot), EventListener {
         // Removing
         val exists = removeVoicechatRole(it.guild!!.idLong, vcId, roleId)
 
-        if(!exists) {
+        if (!exists) {
             return@Command it.reply("Podana rola VC nie istnieje.")
         }
 
@@ -140,7 +142,7 @@ class VoicechatRolesModule(bot: TraitorBot) : BotModule(bot), EventListener {
     ).withAliases("vcr").andRegister(bot)
 
     override fun onEvent(event: GenericEvent) {
-        if(event !is GuildVoiceUpdateEvent) return
+        if (event !is GuildVoiceUpdateEvent) return
 
         applyRoles(event.entity, event.channelLeft, event.channelJoined)
     }
@@ -157,15 +159,15 @@ class VoicechatRolesModule(bot: TraitorBot) : BotModule(bot), EventListener {
         bot.database.connection.use { conn ->
             val result = conn.createStatement().executeQuery(query)
             voicechatRoles = generateSequence {
-                if(!result.next()) null
+                if (!result.next()) null
                 else Triple(
                     result.getLong("guild"),
                     result.getLong("channel"),
                     result.getLong("role")
                 )
-            }.groupBy({it.first}, {it.second to it.third})
+            }.groupBy({ it.first }, { it.second to it.third })
                 .mapValues {
-                    it.value.groupBy({it.first}, {it.second})
+                    it.value.groupBy({ it.first }, { it.second })
                         .mapValues { it.value.toMutableSet() }
                         .toMap().toMutableMap()
                 }
@@ -241,12 +243,12 @@ class VoicechatRolesModule(bot: TraitorBot) : BotModule(bot), EventListener {
     fun applyRoles(member: Member, channelLeft: VoiceChannel?, channelJoined: VoiceChannel?) {
         val guild = member.guild
 
-        val roleIdsToAdd = if(channelJoined != null)
+        val roleIdsToAdd = if (channelJoined != null)
             getVoicechatRoles(channelJoined)
         else
             emptySet()
 
-        val roleIdsToRemove = if(channelLeft != null)
+        val roleIdsToRemove = if (channelLeft != null)
             getVoicechatRoles(channelLeft).filter { it !in roleIdsToAdd }.toSet()
         else
             emptySet()

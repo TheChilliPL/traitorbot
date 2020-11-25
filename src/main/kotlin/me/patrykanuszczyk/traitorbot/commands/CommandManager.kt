@@ -8,14 +8,13 @@ import net.dv8tion.jda.api.EmbedBuilder
 import net.dv8tion.jda.api.MessageBuilder
 import net.dv8tion.jda.api.entities.Message
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent
-import net.dv8tion.jda.api.hooks.ListenerAdapter
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.Logger
 import java.awt.Color
 import java.io.CharArrayWriter
 import java.io.PrintWriter
 
-class CommandManager(val bot: TraitorBot) : ListenerAdapter() {
+class CommandManager(val bot: TraitorBot) {
     val logger: Logger = LogManager.getLogger(CommandManager::class.java)
 
     val commands get() = _commands as Set<Command>
@@ -34,15 +33,19 @@ class CommandManager(val bot: TraitorBot) : ListenerAdapter() {
         )
     }
 
-    override fun onMessageReceived(event: MessageReceivedEvent) {
+    fun onMessageReceived(event: MessageReceivedEvent): Boolean {
         try {
-            if (event.author.isBot) return
+            if (event.author.isBot) return false
 
-            val (name, args) = parseCommandMessage(event.message) ?: return
+            val (name, args) = parseCommandMessage(event.message) ?: return false
 
             executeCommand(event.message, name, args)
+
+            return true
         } catch (exception: Exception) {
             handleThrowable(event, exception)
+
+            return true
         }
     }
 

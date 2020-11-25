@@ -12,6 +12,7 @@ import me.patrykanuszczyk.traitorbot.modules.admin.AdminModule
 import me.patrykanuszczyk.traitorbot.modules.mee6levels.Mee6LevelsModule
 import me.patrykanuszczyk.traitorbot.modules.ping.PingModule
 import me.patrykanuszczyk.traitorbot.modules.prefix.GuildPrefixModule
+import me.patrykanuszczyk.traitorbot.modules.reddit.SubredditLinkerModule
 import me.patrykanuszczyk.traitorbot.modules.vcmove.VoicechatMoveModule
 import me.patrykanuszczyk.traitorbot.modules.voicechatroles.VoicechatRolesModule
 import me.patrykanuszczyk.traitorbot.modules.voting.VotingModule
@@ -22,12 +23,15 @@ import net.dv8tion.jda.api.JDABuilder
 import net.dv8tion.jda.api.OnlineStatus
 import net.dv8tion.jda.api.entities.Guild
 import net.dv8tion.jda.api.entities.User
+import net.dv8tion.jda.api.events.GenericEvent
+import net.dv8tion.jda.api.events.message.MessageReceivedEvent
+import net.dv8tion.jda.api.hooks.EventListener
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.Logger
 import java.io.File
 import kotlin.system.exitProcess
 
-class TraitorBot(secretConfig: SecretConfig) {
+class TraitorBot(secretConfig: SecretConfig): EventListener {
     val database = HikariDataSource(HikariConfig().apply {
         secretConfig.databaseAuth!!.also { auth ->
             jdbcUrl = auth.url + urlExtra
@@ -35,13 +39,6 @@ class TraitorBot(secretConfig: SecretConfig) {
             password = auth.password
         }
     })
-
-//    val database: Connection = DriverManager.getConnection(
-//        secretConfig.databaseAuth!!.url!! +
-//            "?useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=UTC",
-//        secretConfig.databaseAuth.user!!,
-//        secretConfig.databaseAuth.password!!
-//    )
 
     val discord: JDA
     val commandManager = CommandManager(this)
@@ -53,16 +50,24 @@ class TraitorBot(secretConfig: SecretConfig) {
 
     init {
         instance = this
-        discord = JDABuilder.createDefault(secretConfig.botToken).addEventListeners(commandManager).build()
+        discord = JDABuilder.createDefault(secretConfig.botToken).addEventListeners(this).build()
         _modules.addAll(
             AdminModule(this),
             GuildPrefixModule(this),
             Mee6LevelsModule(this),
             PingModule(this),
+            SubredditLinkerModule(this),
             VoicechatMoveModule(this),
             VoicechatRolesModule(this),
             VotingModule(this)
         )
+    }
+
+    override fun onEvent(event: GenericEvent) {
+        if(event is MessageReceivedEvent) {
+            if(!commandManager.onMessageReceived(event))
+                _modules.none { it.onMessageReceived(event) }
+        }
     }
 
     fun hasGlobalPermission(user: User, permission: String): Boolean {

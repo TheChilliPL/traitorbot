@@ -2,7 +2,6 @@ package me.patrykanuszczyk.traitorbot.commands.arguments
 
 import me.patrykanuszczyk.traitorbot.TraitorBot
 import me.patrykanuszczyk.traitorbot.commands.Command
-import me.patrykanuszczyk.traitorbot.utils.guildOrNull
 import me.patrykanuszczyk.traitorbot.utils.maybeAs
 import net.dv8tion.jda.api.entities.*
 
@@ -17,13 +16,13 @@ abstract class DiscordCommandInvokeArguments(bot: TraitorBot, command: Command, 
      */
     abstract val channel: MessageChannel
 
-    val invokerMember: Member? get() = guild?.retrieveMember(invoker)?.complete()
+    inline val invokerMember: Member? get() = guild?.retrieveMember(invoker)?.complete()
 
     override fun reply(message: String) {
         channel.sendMessage(message).complete()
     }
 
-    val isFromGuild get() = guild != null
+    inline val isFromGuild get() = guild != null
 
     /**
      * The guild in which the command was invoked.
