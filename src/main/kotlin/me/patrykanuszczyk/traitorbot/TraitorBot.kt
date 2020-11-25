@@ -4,41 +4,44 @@ import com.google.gson.FieldNamingPolicy
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonSyntaxException
 import com.google.gson.stream.JsonReader
+import com.zaxxer.hikari.HikariConfig
+import com.zaxxer.hikari.HikariDataSource
 import me.patrykanuszczyk.traitorbot.commands.CommandManager
 import me.patrykanuszczyk.traitorbot.modules.BotModule
 import me.patrykanuszczyk.traitorbot.modules.admin.AdminModule
 import me.patrykanuszczyk.traitorbot.modules.mee6levels.Mee6LevelsModule
 import me.patrykanuszczyk.traitorbot.modules.ping.PingModule
-import me.patrykanuszczyk.traitorbot.modules.prefix.GuildPrefix
 import me.patrykanuszczyk.traitorbot.modules.prefix.GuildPrefixModule
 import me.patrykanuszczyk.traitorbot.modules.vcmove.VoicechatMoveModule
 import me.patrykanuszczyk.traitorbot.modules.voicechatroles.VoicechatRolesModule
 import me.patrykanuszczyk.traitorbot.modules.voting.VotingModule
-import me.patrykanuszczyk.traitorbot.permissions.GlobalPermission
-import me.patrykanuszczyk.traitorbot.permissions.GlobalPermissionsTable
 import me.patrykanuszczyk.traitorbot.utils.Result
 import me.patrykanuszczyk.traitorbot.utils.addAll
 import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.JDABuilder
 import net.dv8tion.jda.api.OnlineStatus
 import net.dv8tion.jda.api.entities.Guild
-import net.dv8tion.jda.api.entities.Message
 import net.dv8tion.jda.api.entities.User
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.Logger
-import org.jetbrains.exposed.sql.Database
-import org.jetbrains.exposed.sql.transactions.transaction
 import java.io.File
 import kotlin.system.exitProcess
 
 class TraitorBot(secretConfig: SecretConfig) {
-    val database: Database = Database.connect(
-        secretConfig.databaseAuth!!.url!! +
-            "?useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=UTC",
-        driver = "com.mysql.cj.jdbc.Driver",
-        user = secretConfig.databaseAuth.user!!,
-        password = secretConfig.databaseAuth.password!!
-    )
+    val database = HikariDataSource(HikariConfig().apply {
+        secretConfig.databaseAuth!!.also { auth ->
+            jdbcUrl = auth.url + urlExtra
+            username = auth.user
+            password = auth.password
+        }
+    })
+
+//    val database: Connection = DriverManager.getConnection(
+//        secretConfig.databaseAuth!!.url!! +
+//            "?useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=UTC",
+//        secretConfig.databaseAuth.user!!,
+//        secretConfig.databaseAuth.password!!
+//    )
 
     val discord: JDA
     val commandManager = CommandManager(this)
@@ -71,25 +74,88 @@ class TraitorBot(secretConfig: SecretConfig) {
         }
     }
 
+    private var globalPermissions: MutableMap<Long, List<String>>? = null
+
+    init {
+        val query = "SELECT user, permission FROM global_permissions"
+
+        database.connection.use { conn ->
+            val result = conn.createStatement().executeQuery(query)
+
+            globalPermissions = generateSequence {
+                if(!result.next()) null
+                else result.getLong("user") to
+                    result.getString("permission")
+            }.groupBy({it.first}, {it.second}).toMutableMap()
+        }
+    }
+
     fun getGlobalPermissions(id: Long): List<String> {
-        return transaction {
-            GlobalPermission.find { GlobalPermissionsTable.user eq id }.toList().map { it.permission }
+        return globalPermissions?.get(id) ?: emptyList()
+    }
+
+    private var prefixes: MutableMap<Long, String>? = null
+
+    init {
+        val query = "SELECT id, prefix FROM guild_prefix"
+
+        database.connection.use { conn ->
+            val result = conn.createStatement().executeQuery(query)
+
+            prefixes = generateSequence {
+                if(!result.next()) null
+                else result.getLong("id") to
+                    result.getString("prefix")
+            }.toMap().toMutableMap()
         }
     }
 
     /**
-     * Gets guild prefix or null, if none is set.
-     * If passed guild is null, returns null.
+     * Gets guild prefix or `null`, if none is set or the [guild] is `null`.
      */
     fun getPrefixFor(guild: Guild?): String? {
         if (guild == null) return null
-        return transaction {
-            GuildPrefix.findById(guild.idLong)
-        }?.prefix
+        return prefixes?.get(guild.idLong)
+    }
+
+    /**
+     * Removes the prefix of a guild.
+     * @return `true` if guild has had prefix before; `false` otherwise.
+     */
+    fun removePrefixFor(guild: Guild): Boolean {
+        prefixes!!.remove(guild.idLong) ?: return false
+        val query = "DELETE IGNORE FROM guild_prefix WHERE id = ?"
+        database.connection.use { conn ->
+            conn.prepareStatement(query).apply {
+                setLong(1, guild.idLong)
+            }.execute()
+        }
+        return true
+    }
+
+    /**
+     * Sets the prefix of a guild.
+     */
+    fun setPrefixFor(guild: Guild, prefix: String) {
+        prefixes!![guild.idLong] = prefix
+        val query = """
+            SET @id = ?, @prefix = ?;
+            INSERT
+                INTO guild_prefix (id, prefix)
+                VALUES (@id, @prefix)
+                ON DUPLICATE KEY UPDATE prefix = @prefix
+        """
+        database.connection.use { conn ->
+            conn.prepareStatement(query).apply {
+                setLong(1, guild.idLong)
+                setString(2, prefix)
+            }.execute()
+        }
     }
 
     fun processShutdown() {
         logger.info("Shutting down...")
+        database.close()
         discord.presence.setStatus(OnlineStatus.OFFLINE)
         discord.shutdown()
     }
@@ -102,6 +168,9 @@ class TraitorBot(secretConfig: SecretConfig) {
 
     companion object {
         internal var instance: TraitorBot? = null
+
+        private const val urlExtra =
+            "?useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=UTC"
     }
 }
 
