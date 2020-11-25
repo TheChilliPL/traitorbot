@@ -3,10 +3,10 @@ package me.patrykanuszczyk.traitorbot.utils
 abstract class Result<S, F> {
     //private abstract fun isSuccessful(): Boolean
     abstract val successful: Boolean
-    val failed get() = !successful
+    inline val failed get() = !successful
 
-    val successValue get() = if(this is Success) value else null
-    val failValue get() = if(this is Failure) value else null
+    inline val successValue inline get() = if(this is Success) value else null
+    inline val failValue get() = if(this is Failure) value else null
 
     inline fun ifSuccess(func: (S) -> Unit): Result<S, F> {
         if(successful) func(this.successValue!!)
@@ -14,7 +14,7 @@ abstract class Result<S, F> {
     }
 
     inline fun ifFailed(func: (F) -> Unit): Result<S, F> {
-        if(!successful) func(this.failValue!!)
+        if(failed) func(this.failValue!!)
         return this
     }
 

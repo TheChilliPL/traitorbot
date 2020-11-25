@@ -4,9 +4,9 @@ import me.patrykanuszczyk.traitorbot.TraitorBot
 import me.patrykanuszczyk.traitorbot.commands.Command
 import me.patrykanuszczyk.traitorbot.commands.Parameter
 import me.patrykanuszczyk.traitorbot.commands.arguments.DiscordCommandInvokeArguments
+import me.patrykanuszczyk.traitorbot.commands.arguments.MessageCommandInvokeArguments
 import me.patrykanuszczyk.traitorbot.commands.parseParameters
 import me.patrykanuszczyk.traitorbot.modules.BotModule
-import net.dv8tion.jda.internal.requests.RateLimiter
 import java.time.Duration
 import java.time.Instant
 
@@ -16,11 +16,28 @@ class PingModule(bot: TraitorBot) : BotModule(bot) {
             return@Command args.reply("Ta komenda musi być wykonana na Discordzie!")
 
         var amount: Int? = 1
+        var full = false
 
         parseParameters(
             args.parameters,
-            Parameter("a", "amount", getInput = true) { amount = it!!.toIntOrNull() }
+            Parameter("a", "amount", getInput = true) { amount = it!!.toIntOrNull() },
+            Parameter("f", "full") { full = true }
         ).fail { return@Command args.reply(it) }
+
+        if(full) {
+            if(args !is MessageCommandInvokeArguments)
+                return@Command args.reply("Test pełnego pingu musi być przeprowadzony ręcznie komendą.")
+
+            val msg = args.channel.sendMessage(":timer: Testowanie pełnego pingu...").complete()
+
+            val ping = Duration.between(args.message.timeCreated, msg.timeCreated)
+            val pingMs = ping.toNanos() / 1e6
+
+            msg.editMessage("Pełny ping (między wysłaniem komendy a odpowiedzi) wynosi $pingMs ms.")
+                .complete()
+
+            return@Command
+        }
 
         if (amount == null) return@Command args.reply("Podana ilość jest nieprawidłowa.")
         if (amount!! < 1) return@Command args.reply("Ilość musi wynosić co najmniej 1.")

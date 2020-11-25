@@ -53,11 +53,13 @@ class VoicechatMoveModule(bot: TraitorBot) : BotModule(bot) {
         if(vcFrom.members.isEmpty())
             return@Command it.reply("Kanał jest pusty.")
 
-        val moved = vcFrom.members.map { member -> try {
-            Triple(member, member.moveTo(vcTo).submit(), null)
-        } catch(e: Exception) {
-            Triple(member, null, e)
-        }}.map { (member, future, e) ->
+        val moved = vcFrom.members.map { member ->
+            try {
+                Triple(member, member.moveTo(vcTo).submit(), null)
+            } catch (e: Exception) {
+                Triple(member, null, e)
+            }
+        }.map { (member, future, e) ->
             if(e != null) return@map member to e
             try {
                 future!!.join()
@@ -73,25 +75,21 @@ class VoicechatMoveModule(bot: TraitorBot) : BotModule(bot) {
         if (moved.none { m -> m.second == null })
             return@Command it.reply(
                 "Nie można było nikogo przesunąć:\n" +
-                    moved.map { m ->
+                    moved.joinToString("\n") { m ->
                         "- " + m.first.user.name + "#" + m.first.user.discriminator +
                             " → " + m.second!!.javaClass.simpleName
                     }
-                        .joinToString("\n")
             )
 
         it.reply(
             "Przesunięto następujące osoby:\n" +
                 moved.filter { m -> m.second == null }
-                    .map { m -> "- " + m.first.user.name + "#" + m.first.user.discriminator }
-                    .joinToString("\n") +
+                    .joinToString("\n") { m -> "- " + m.first.user.name + "#" + m.first.user.discriminator } +
                 "\nJednak nie można było przesunąć:\n" +
-                moved.filter { m -> m.second != null }
-                    .map { m ->
-                        "- " + m.first.user.name + "#" + m.first.user.discriminator +
-                            " → " + m.second!!.javaClass
-                    }
-                    .joinToString("\n")
+                moved.filter { m -> m.second != null }.joinToString("\n") { m ->
+                    "- " + m.first.user.name + "#" + m.first.user.discriminator +
+                        " → " + m.second!!.javaClass
+                }
         )
     }.andRegister(bot)
 }
