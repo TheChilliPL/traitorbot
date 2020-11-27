@@ -2,11 +2,12 @@ package me.patrykanuszczyk.traitorbot.modules.admin
 
 import me.patrykanuszczyk.traitorbot.TraitorBot
 import me.patrykanuszczyk.traitorbot.commands.*
-import me.patrykanuszczyk.traitorbot.commands.arguments.CommandInvokeArguments
 import me.patrykanuszczyk.traitorbot.commands.arguments.DiscordCommandInvokeArguments
 import me.patrykanuszczyk.traitorbot.modules.BotModule
 import me.patrykanuszczyk.traitorbot.utils.Result
-import java.time.Duration
+import me.patrykanuszczyk.traitorbot.utils.escapeFormatting
+import me.patrykanuszczyk.traitorbot.utils.escapeFormattingInCode
+import me.patrykanuszczyk.traitorbot.utils.escapeMentions
 import kotlin.system.exitProcess
 
 class AdminModule(bot: TraitorBot) : BotModule(bot) {
@@ -57,4 +58,20 @@ class AdminModule(bot: TraitorBot) : BotModule(bot) {
             """.trimIndent()
         )
     }.withAliases("ptest").andRegister(bot)
+
+    val escTest = Command("esc_test") { args ->
+        if(args !is DiscordCommandInvokeArguments || !args.isFromGuild)
+            return@Command args.reply("Musisz być na serwerze.")
+        args.reply(args.parameters.escapeFormatting().escapeMentions(args.guild!!))
+    }.andRegister(bot)
+
+    val codeTest = Command("code_test") { args ->
+        if(args !is DiscordCommandInvokeArguments || !args.isFromGuild)
+            return@Command args.reply("Musisz być na serwerze.")
+        args.reply(
+            "```\n"
+                + args.parameters.escapeFormattingInCode()
+                .escapeMentions(args.guild!!) + "\n```"
+        )
+    }.andRegister(bot)
 }

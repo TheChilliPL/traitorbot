@@ -107,7 +107,7 @@ class SubredditLinkerModule(bot: TraitorBot) : BotModule(bot) {
                 .apply {
                     matches.forEach {
                         val subreddit = it.groups[1]?.value
-                        appendDescription("[r/$subreddit](https://www.reddit.com/r/$subreddit)/\n")
+                        appendDescription("[r/$subreddit](https://www.reddit.com/r/$subreddit/)\n")
                     }
                 }
                 .build()

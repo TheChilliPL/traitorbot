@@ -7,10 +7,22 @@ fun List<Int>.normalize(max: Int): List<Int> {
     return map { it * max / initMax }
 }
 
-fun <E> MutableCollection<E>.addAll(vararg elements: E): Boolean {
+@Suppress("NOTHING_TO_INLINE")
+inline fun <E> MutableCollection<E>.addAll(vararg elements: E): Boolean {
     return this.addAll(elements)
 }
 
-fun <E> MutableCollection<E>.addUnique(element: E) {
+@Suppress("NOTHING_TO_INLINE")
+inline fun <E> MutableCollection<E>.addUnique(element: E) {
     if(!contains(element)) add(element)
+}
+
+@Suppress("NOTHING_TO_INLINE")
+inline fun <T> Iterator<T>.nextOrNull(): T? {
+    return if(hasNext()) next() else null
+}
+
+@Suppress("NOTHING_TO_INLINE")
+inline fun <T> PeekableIterator<T>.peekOrNull(): T? {
+    return if(hasNext()) peek() else null
 }

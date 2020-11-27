@@ -3,7 +3,7 @@ package me.patrykanuszczyk.traitorbot.utils
 import kotlin.reflect.KClass
 
 @Suppress("UNCHECKED_CAST", "NOTHING_TO_INLINE")
-inline fun <T> Any.asType() : T {
+inline fun <T> Any?.asType() : T {
     return this as T
 }
 

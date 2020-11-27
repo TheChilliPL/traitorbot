@@ -38,13 +38,25 @@ abstract class Result<S, F> {
         return this.successValue!!
     }
 
+    abstract fun <S2> mapSuccess(func: (S) -> S2): Result<S2, F>
+
+    abstract fun <F2> mapFail(func: (F) -> F2): Result<S, F2>
+
     class Success<S, F>(val value: S): Result<S, F>() {
         override val successful: Boolean
             get() = true
+
+        override fun <S2> mapSuccess(func: (S) -> S2): Success<S2, F> = Success(func(value))
+
+        override fun <F2> mapFail(func: (F) -> F2): Success<S, F2> = Success(value)
     }
 
     class Failure<S, F>(val value: F): Result<S, F>() {
         override val successful: Boolean
             get() = false
+
+        override fun <S2> mapSuccess(func: (S) -> S2): Failure<S2, F> = Failure(value)
+
+        override fun <F2> mapFail(func: (F) -> F2): Failure<S, F2> = Failure(func(value))
     }
 }
