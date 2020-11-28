@@ -9,6 +9,7 @@ import me.patrykanuszczyk.traitorbot.modules.BotModule
 import me.patrykanuszczyk.traitorbot.utils.PeekableIterator.Companion.peekableIterator
 import me.patrykanuszczyk.traitorbot.utils.addUnique
 import me.patrykanuszczyk.traitorbot.utils.escapeFormattingInCode
+import net.dv8tion.jda.api.Permission
 import net.dv8tion.jda.api.entities.Guild
 import net.dv8tion.jda.api.entities.Member
 import net.dv8tion.jda.api.entities.TextChannel
@@ -29,6 +30,8 @@ class InviteDetectModule(bot: TraitorBot) : BotModule(bot), EventListener {
         }.singleOrNull() ?: return@Command
         if(args !is MessageCommandInvokeArguments || !args.isFromGuild)
             return@Command args.reply("Musisz być na serwerze!")
+        if(!args.invokerMember!!.hasPermission(Permission.MANAGE_SERVER))
+            return@Command bot.commandManager.sendNoPermissionMessage(args)
         when(param0) {
             "enable" -> {
                 val param1 = parseParameters(paramsIterator, 1).fail { return@Command args.reply(it) }
