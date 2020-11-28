@@ -194,12 +194,12 @@ class InviteDetectModule(bot: TraitorBot) : BotModule(bot), EventListener {
             MessageType.UNKNOWN_INVITER -> value.copy(third = message)
         }
 
-        val query = "UPDATE invite_detect WHERE guild = ? SET ${type.column} = ?"
+        val query = "UPDATE invite_detect SET ${type.column} = ? WHERE guild = ?"
 
         bot.database.connection.use { conn ->
             conn.prepareStatement(query).apply {
-                setLong(1, guild.idLong)
-                setString(2, message)
+                setString(1, message)
+                setLong(2, guild.idLong)
             }.execute()
         }
     }

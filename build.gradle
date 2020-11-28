@@ -5,7 +5,7 @@ plugins {
 }
 
 group "me.patrykanuszczyk"
-version "0.5.1"
+version "0.5.2"
 //noinspection GroovyUnusedAssignment
 mainClassName = "me.patrykanuszczyk.traitorbot.TraitorBotKt"
 
