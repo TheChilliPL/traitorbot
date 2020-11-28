@@ -9,6 +9,7 @@ import com.zaxxer.hikari.HikariDataSource
 import me.patrykanuszczyk.traitorbot.commands.CommandManager
 import me.patrykanuszczyk.traitorbot.modules.BotModule
 import me.patrykanuszczyk.traitorbot.modules.admin.AdminModule
+import me.patrykanuszczyk.traitorbot.modules.invitedetect.InviteDetectModule
 import me.patrykanuszczyk.traitorbot.modules.mee6levels.Mee6LevelsModule
 import me.patrykanuszczyk.traitorbot.modules.ping.PingModule
 import me.patrykanuszczyk.traitorbot.modules.prefix.GuildPrefixModule
@@ -26,6 +27,7 @@ import net.dv8tion.jda.api.entities.User
 import net.dv8tion.jda.api.events.GenericEvent
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent
 import net.dv8tion.jda.api.hooks.EventListener
+import net.dv8tion.jda.api.requests.GatewayIntent
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.Logger
 import java.io.File
@@ -50,10 +52,21 @@ class TraitorBot(secretConfig: SecretConfig): EventListener {
 
     init {
         instance = this
-        discord = JDABuilder.createDefault(secretConfig.botToken).addEventListeners(this).build()
+        discord = JDABuilder.create(
+            secretConfig.botToken,
+            GatewayIntent.GUILD_MEMBERS,
+            GatewayIntent.GUILD_INVITES,
+            GatewayIntent.GUILD_VOICE_STATES,
+            GatewayIntent.GUILD_MESSAGES,
+            GatewayIntent.GUILD_MESSAGE_REACTIONS,
+            GatewayIntent.DIRECT_MESSAGES,
+            GatewayIntent.DIRECT_MESSAGE_REACTIONS
+        ).addEventListeners(this).build()
+
         _modules.addAll(
             AdminModule(this),
             GuildPrefixModule(this),
+            InviteDetectModule(this),
             Mee6LevelsModule(this),
             PingModule(this),
             SubredditLinkerModule(this),
@@ -154,7 +167,7 @@ class TraitorBot(secretConfig: SecretConfig): EventListener {
             conn.prepareStatement(query).apply {
                 setLong(1, guild.idLong)
                 setString(2, prefix)
-            }.execute()
+            }.executeUpdate()
         }
     }
 
@@ -175,7 +188,11 @@ class TraitorBot(secretConfig: SecretConfig): EventListener {
         internal var instance: TraitorBot? = null
 
         private const val urlExtra =
-            "?useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=UTC"
+            "?useUnicode=true" +
+                "&useJDBCCompliantTimezoneShift=true" +
+                "&useLegacyDatetimeCode=false" +
+                "&serverTimezone=UTC" +
+                "&allowMultiQueries=true"
     }
 }
 
