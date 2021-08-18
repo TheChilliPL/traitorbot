@@ -2,11 +2,13 @@
 A Discord bot written in [Kotlin] (JVM) using [JDA] Discord API wrapper and [HikariCP] database connection pool for [JDBC] (previously, up to 3.1: [Exposed]).  
 At the moment, an already hosted bot isn't available to invite, but we plan to make it public once it hits the first stable version 1.0!
 
-  [Kotlin]: https://kotlinlang.org/
-     [JDA]: https://github.com/DV8FromTheWorld/JDA
+[Kotlin]:   https://kotlinlang.org/
+[JDA]:      https://github.com/DV8FromTheWorld/JDA
 [HikariCP]: https://github.com/brettwooldridge/HikariCP
-    [JDBC]: https://en.wikipedia.org/wiki/Java_Database_Connectivity
- [Exposed]: https://github.com/JetBrains/Exposed
+[JDBC]:     https://en.wikipedia.org/wiki/Java_Database_Connectivity
+[Exposed]:  https://github.com/JetBrains/Exposed
+
+[You can see the changelog in CHANGELOG.md.](CHANGELOG.md)
  
 ## Features
 Current features of this bot include:
